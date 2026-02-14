@@ -6,7 +6,7 @@
 		      "tool",
 		      "run",
 		      "arxiv-mcp-server",
-		      "--storage-path", "/path/to/paper/storage"
+		      "--storage-path", "./.arxiv"
 		  ]
 		},
 		"context7": {

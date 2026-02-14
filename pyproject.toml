@@ -1,0 +1,85 @@
+[project]
+name = "real_estate"
+version = "0.1.0"
+description = "한국 부동산 통계 데이터 수집·분석·MCP 플랫폼"
+readme = "README.md"
+authors = [
+    { name = "tae0y[박태영]", email = "tae0yp@gmail.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    # Web Framework
+    "fastapi>=0.128.0",
+    "uvicorn>=0.40.0",
+    # UI
+    "streamlit>=1.40.0",
+    # HTTP Client (async)
+    "httpx>=0.28.0",
+    # Data Models & Settings
+    "pydantic-settings>=2.0.0",
+    # MCP Server
+    "mcp[cli]>=1.0.0",
+    # Agent Framework (preview)
+    "agent-framework>=1.0.0b0",
+]
+
+[build-system]
+requires = ["uv_build>=0.9.28,<0.10.0"]
+build-backend = "uv_build"
+
+[tool.uv]
+prerelease = "if-necessary-or-explicit"
+
+[dependency-groups]
+dev = [
+    "bandit>=1.9.3",
+    "pip-audit>=2.10.0",
+    "pre-commit>=4.5.1",
+    "pyright>=1.1.408",
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.24.0",
+    "pytest-cov>=6.0.0",
+    "respx>=0.22.0",
+    "ruff>=0.14.14",
+]
+
+[tool.bandit]
+exclude_dirs = ["tests", "scripts"]
+skips = ["B101"]
+
+[tool.pyright]
+venvPath = "."
+venv = ".venv"
+typeCheckingMode = "standard"
+reportMissingTypeStubs = "warning"
+reportUnknownParameterType = "warning"
+reportUnknownArgumentType = "warning"
+reportUnknownMemberType = "warning"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W"]
+ignore = []
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+addopts = "--cov=src/real_estate --cov-report=term-missing --cov-fail-under=80"
+
+[tool.coverage.run]
+source = ["src/real_estate"]
+branch = true
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+]

@@ -1,0 +1,31 @@
+# Local files
+gitignore/
+
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Environment variables
+.env
+.env.*
+
+# IDE settings
+.vscode/
+.idea/
+
+# Database
+*.sqlite
+*.db
+
+# Cache
+.cache/
+
+# MacOS-specific files
+.DS_Store

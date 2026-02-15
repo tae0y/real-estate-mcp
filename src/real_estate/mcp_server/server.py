@@ -32,6 +32,14 @@ Korean "subscription" keyword mapping (for tool selection):
     → get_apt_subscription_info
   - "청약 경쟁률", "청약 신청자", "청약 당첨자", "가점", "가점제"
     → get_apt_subscription_results
+
+Korean "onbid/public auction" keyword mapping (for tool selection):
+  - "온비드", "공매", "입찰", "낙찰", "유찰", "캠코"
+    → get_public_auction_items (next-gen bid results list, B010003)
+  - "온비드 물건", "온비드 물건조회", "통합용도별물건", "처분방식", "감정가", "최저입찰가"
+    → get_onbid_thing_info_list (ThingInfoInquireSvc list)
+  - "온비드 코드", "용도 코드", "카테고리 코드", "주소 코드", "시도/시군구/읍면동 코드조회"
+    → get_onbid_*_code_info / get_onbid_addr*_info (OnbidCodeInfoInquireSvc)
 """
 
 from __future__ import annotations
@@ -1461,6 +1469,21 @@ async def get_public_auction_items(
     This tool calls:
       - OnbidCltrBidRsltListSrvc/getCltrBidRsltList
 
+    Natural-language → parameter mapping (for Claude):
+      - Users usually do NOT ask for codes directly. When the user says things like
+        "온비드 공매 물건", "입찰 결과", "낙찰/유찰", "개찰일", "감정가/최저입찰가 범위" you should:
+        1) Extract intent and filters from the user message
+        2) Fill the corresponding parameters below
+        3) Call this tool to fetch the list
+
+      - Location normalization:
+        If the user provides a region in natural language ("서울 강남구", "부산 해운대구"),
+        you can optionally call the Onbid address lookup tools first and then plug the
+        results into:
+          - lctn_sdnm (시/도) ← get_onbid_addr1_info
+          - lctn_sggnm (시/군/구) ← get_onbid_addr2_info(addr1)
+          - lctn_emd_nm (읍/면/동) ← get_onbid_addr3_info(addr2)
+
     Authentication:
       - Set ONBID_API_KEY (recommended), or
       - Reuse DATA_GO_KR_API_KEY.
@@ -1662,6 +1685,38 @@ async def get_onbid_thing_info_list(
       - The guide warns that requests from Python programs may be restricted.
       - Response is XML; this tool returns raw tag->text dicts per item.
 
+    Natural-language → parameter mapping (for Claude):
+      - Users typically describe what they want in words ("토지 공매", "주거용 건물", "서울 마포구",
+        "감정가 5억 이하", "최저입찰가 3억 이하", "이번 달 입찰 마감") and do NOT ask for codes.
+        When the user intent maps to coded parameters, call code-lookup tools to resolve
+        values first, then call this tool.
+
+      - Category/usage filters:
+        Parameters:
+          - CTGR_HIRK_ID (카테고리상위ID)
+          - CTGR_HIRK_ID_MID (카테고리상위ID(중간))
+        Resolution tools:
+          1) get_onbid_top_code_info
+          2) get_onbid_middle_code_info(ctgr_id=<CTGR_ID from step 1>)
+          3) get_onbid_bottom_code_info(ctgr_id=<CTGR_ID from step 2>)  # optional, more specific
+        How to apply:
+          - If the user gives a broad category ("부동산", "토지", "주거용건물"):
+            Use CTGR_ID from get_onbid_middle_code_info as CTGR_HIRK_ID_MID.
+          - If the user gives a more specific subtype ("전", "답", "대지" 등 하위 용도):
+            Use CTGR_ID from get_onbid_bottom_code_info as CTGR_HIRK_ID.
+        Practical tip:
+          - If uncertain, omit CTGR_* filters first, fetch a small list, then refine.
+
+      - Location filters:
+        Parameters:
+          - SIDO (시/도), SGK (시/군/구), EMD (읍/면/동)
+        Resolution tools:
+          - get_onbid_addr1_info → returns ADDR1 candidates (시/도)
+          - get_onbid_addr2_info(addr1) → returns ADDR2 candidates (시/군/구)
+          - get_onbid_addr3_info(addr2) → returns ADDR3 candidates (읍/면/동)
+        How to apply:
+          - Use the selected ADDR* strings directly as SIDO/SGK/EMD.
+
     Args:
         page_no: Page number (1-based).
         num_of_rows: Items per page.
@@ -1766,6 +1821,12 @@ async def get_onbid_top_code_info(
     These codes are needed to fill ThingInfoInquireSvc parameters such as
     CTGR_HIRK_ID and CTGR_HIRK_ID_MID.
 
+    Typical usage:
+      - User says "온비드에서 토지 공매 보고 싶어"
+      - Call get_onbid_top_code_info → find "부동산"(CTGR_ID=10000)
+      - Call get_onbid_middle_code_info(ctgr_id="10000") → find "토지"(CTGR_ID=10100)
+      - Use CTGR_HIRK_ID_MID="10100" when calling get_onbid_thing_info_list
+
     Returns raw records containing:
       - CTGR_ID, CTGR_NM, CTGR_HIRK_ID, CTGR_HIRK_NM
     """
@@ -1839,6 +1900,13 @@ async def get_onbid_addr1_info(
     """Return Onbid address depth-1 list (시/도).
 
     Korean keywords: 온비드 주소 코드, 시도, 주소1, 코드조회
+
+    Typical usage:
+      - User says "서울 마포구"
+      - Call get_onbid_addr1_info → pick ADDR1="서울특별시"
+      - Call get_onbid_addr2_info(addr1="서울특별시") → pick ADDR2="마포구"
+      - Optionally call get_onbid_addr3_info(addr2="마포구") for 읍/면/동
+      - Use SIDO/SGK/EMD when calling get_onbid_thing_info_list
     """
     if page_no < 1:
         return {"error": "validation_error", "message": "page_no must be >= 1"}

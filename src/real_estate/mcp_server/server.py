@@ -14,6 +14,9 @@ Tools:
   - get_single_house_trades: detached/multi-unit house sale records + summary stats
   - get_single_house_rent: detached/multi-unit house lease/rent records + summary stats
   - get_commercial_trade: commercial/business building sale records + summary stats
+  - get_apt_subscription_info: applyhome (청약홈) APT subscription notice metadata
+  - get_apt_subscription_results: applyhome (청약홈) subscription stats (requests, winners, rates, scores)
+  - get_public_auction_items: onbid next-gen bid result list (공매 물건 입찰결과 목록)
 
 Korean housing-type keyword mapping (for tool selection):
   - "아파트" → get_apartment_trades / get_apartment_rent
@@ -24,6 +27,8 @@ Korean housing-type keyword mapping (for tool selection):
   - "아파트외" (비아파트) → If subtype is not specified, prefer calling:
     get_villa_trades + get_single_house_trades (and optionally officetel tools if "오피스텔" is included).
 """
+
+from __future__ import annotations
 
 import os
 import statistics
@@ -57,6 +62,15 @@ _SINGLE_TRADE_URL = "https://apis.data.go.kr/1613000/RTMSDataSvcSHTrade/getRTMSD
 _SINGLE_RENT_URL = "https://apis.data.go.kr/1613000/RTMSDataSvcSHRent/getRTMSDataSvcSHRent"
 _COMMERCIAL_TRADE_URL = "https://apis.data.go.kr/1613000/RTMSDataSvcNrgTrade/getRTMSDataSvcNrgTrade"
 
+_ODCLOUD_BASE_URL = "https://api.odcloud.kr/api"
+_APT_SUBSCRIPTION_INFO_PATH = "/15101046/v1/uddi:14a46595-03dd-47d3-a418-d64e52820598"
+
+_APPLYHOME_STAT_BASE_URL = "https://api.odcloud.kr/api/ApplyhomeStatSvc/v1"
+
+_ONBID_BID_RESULT_LIST_URL = (
+    "http://apis.data.go.kr/B010003/OnbidCltrBidRsltListSrvc/getCltrBidRsltList"
+)
+
 _ERROR_MESSAGES: dict[str, str] = {
     "03": "No trade records found for the specified region and period.",
     "10": "Invalid API request parameters.",
@@ -68,6 +82,24 @@ _ERROR_MESSAGES: dict[str, str] = {
 # ---------------------------------------------------------------------------
 # Common helpers
 # ---------------------------------------------------------------------------
+
+
+def _build_url_with_service_key(base: str, service_key: str, params: dict[str, Any]) -> str:
+    """Build a URL with a URL-encoded serviceKey embedded directly in the string.
+
+    Parameters:
+        base: Base endpoint URL (without query string).
+        service_key: Raw serviceKey string to URL-encode.
+        params: Remaining query string parameters.
+
+    Returns:
+        Fully constructed URL string.
+    """
+    encoded_key = urllib.parse.quote(service_key, safe="")
+    encoded_params = urllib.parse.urlencode(params, doseq=True)
+    if encoded_params:
+        return f"{base}?serviceKey={encoded_key}&{encoded_params}"
+    return f"{base}?serviceKey={encoded_key}"
 
 
 def _build_url(base: str, region_code: str, year_month: str, num_of_rows: int) -> str:
@@ -120,12 +152,84 @@ async def _fetch_xml(url: str) -> tuple[str | None, dict[str, Any] | None]:
         return None, {"error": "network_error", "message": f"Network error: {exc}"}
 
 
+async def _fetch_json(
+    url: str,
+    headers: dict[str, str] | None = None,
+) -> tuple[dict[str, Any] | list[Any] | None, dict[str, Any] | None]:
+    """Perform an async HTTP GET and return decoded JSON or an error dict."""
+    try:
+        async with httpx.AsyncClient(timeout=15.0, headers=headers) as client:
+            response = await client.get(url)
+            response.raise_for_status()
+            return response.json(), None
+    except httpx.TimeoutException:
+        return None, {"error": "network_error", "message": "API server timed out (15s)"}
+    except httpx.HTTPStatusError as exc:
+        return None, {
+            "error": "network_error",
+            "message": f"HTTP error: {exc.response.status_code}",
+        }
+    except ValueError as exc:
+        return None, {"error": "parse_error", "message": f"JSON parse failed: {exc}"}
+    except httpx.RequestError as exc:
+        return None, {"error": "network_error", "message": f"Network error: {exc}"}
+
+
 def _check_api_key() -> dict[str, Any] | None:
     """Return an error dict if DATA_GO_KR_API_KEY is not set, else None."""
     if not os.getenv("DATA_GO_KR_API_KEY", ""):
         return {
             "error": "config_error",
             "message": "Environment variable DATA_GO_KR_API_KEY is not set.",
+        }
+    return None
+
+
+def _get_data_go_kr_key_for_onbid() -> str:
+    """Return the service key to use for Onbid APIs."""
+    return os.getenv("ONBID_API_KEY", "") or os.getenv("DATA_GO_KR_API_KEY", "")
+
+
+def _check_onbid_api_key() -> dict[str, Any] | None:
+    """Return an error dict if Onbid API key is not set, else None."""
+    if not _get_data_go_kr_key_for_onbid():
+        return {
+            "error": "config_error",
+            "message": "Environment variable ONBID_API_KEY (or DATA_GO_KR_API_KEY) is not set.",
+        }
+    return None
+
+
+def _get_odcloud_key() -> tuple[str, str]:
+    """Return (mode, key) for odcloud authentication.
+
+    mode:
+      - "authorization": use Authorization header
+      - "serviceKey": use serviceKey query parameter
+    """
+    api_key = os.getenv("ODCLOUD_API_KEY", "")
+    if api_key:
+        return "authorization", api_key
+    service_key = os.getenv("ODCLOUD_SERVICE_KEY", "")
+    if service_key:
+        return "serviceKey", service_key
+    # Project convention: reuse DATA_GO_KR_API_KEY unless explicitly overridden.
+    fallback_key = os.getenv("DATA_GO_KR_API_KEY", "")
+    if fallback_key:
+        return "authorization", fallback_key
+    return "", ""
+
+
+def _check_odcloud_key() -> dict[str, Any] | None:
+    """Return an error dict if odcloud key is not set, else None."""
+    mode, key = _get_odcloud_key()
+    if not mode or not key:
+        return {
+            "error": "config_error",
+            "message": (
+                "Environment variable ODCLOUD_API_KEY (or ODCLOUD_SERVICE_KEY, or DATA_GO_KR_API_KEY) "
+                "is not set."
+            ),
         }
     return None
 
@@ -979,6 +1083,339 @@ async def get_commercial_trade(
     return await _run_trade_tool(
         _COMMERCIAL_TRADE_URL, _parse_commercial_trade, region_code, year_month, num_of_rows
     )
+
+
+# ---------------------------------------------------------------------------
+# Tool 10: applyhome APT subscription notice metadata (odcloud)
+# ---------------------------------------------------------------------------
+
+
+@mcp.tool()
+async def get_apt_subscription_info(
+    page: int = 1,
+    per_page: int = 100,
+    return_type: str = "JSON",
+) -> dict[str, Any]:
+    """Return Applyhome (청약홈) APT subscription notice metadata.
+
+    This tool returns APT notice metadata such as notice number, house name,
+    location, schedule dates (announcement, application, winner, contract),
+    and operator/constructor information.
+
+    Authentication:
+      - Set ODCLOUD_API_KEY (Authorization header), or
+      - Set ODCLOUD_SERVICE_KEY (serviceKey query parameter).
+
+    Args:
+        page: Page number (1-based).
+        per_page: Items per page.
+        return_type: Response type, typically "JSON".
+
+    Returns:
+        total_count: Total record count from the API.
+        items: Notice metadata records.
+        page: Current page.
+        per_page: Items per page.
+        current_count: Number of returned items in this response.
+        match_count: Number of matched items (may differ by API).
+        error/message: Present on API/network/config failure.
+    """
+    if page < 1:
+        return {"error": "validation_error", "message": "page must be >= 1"}
+    if per_page < 1:
+        return {"error": "validation_error", "message": "per_page must be >= 1"}
+
+    err = _check_odcloud_key()
+    if err:
+        return err
+
+    mode, key = _get_odcloud_key()
+    headers: dict[str, str] | None = None
+    params: dict[str, Any] = {"page": page, "perPage": per_page, "returnType": return_type}
+    if mode == "authorization":
+        headers = {"Authorization": key}
+    elif mode == "serviceKey":
+        params["serviceKey"] = key
+
+    url = f"{_ODCLOUD_BASE_URL}{_APT_SUBSCRIPTION_INFO_PATH}?{urllib.parse.urlencode(params)}"
+    payload, fetch_err = await _fetch_json(url, headers=headers)
+    if fetch_err:
+        return fetch_err
+    if not isinstance(payload, dict):
+        return {"error": "parse_error", "message": "Unexpected response type"}
+
+    return {
+        "total_count": int(payload.get("totalCount") or 0),
+        "items": payload.get("data") or [],
+        "page": int(payload.get("page") or page),
+        "per_page": int(payload.get("perPage") or per_page),
+        "current_count": int(payload.get("currentCount") or 0),
+        "match_count": int(payload.get("matchCount") or 0),
+    }
+
+
+# ---------------------------------------------------------------------------
+# Tool 11: applyhome subscription stats (odcloud)
+# ---------------------------------------------------------------------------
+
+
+@mcp.tool()
+async def get_apt_subscription_results(
+    stat_kind: str,
+    stat_year_month: str | None = None,
+    area_code: str | None = None,
+    reside_secd: str | None = None,
+    page: int = 1,
+    per_page: int = 100,
+    return_type: str = "JSON",
+) -> dict[str, Any]:
+    """Return Applyhome (청약홈) subscription stats: requests, winners, rates, and scores.
+
+    stat_kind choices:
+      - "reqst_area": 지역별 청약 신청자 (연령대별 신청건수)
+      - "reqst_age":  연령별 청약 신청자 (연령대별 신청건수)
+      - "przwner_area": 지역별 청약 당첨자 (연령대별 당첨건수)
+      - "przwner_age":  연령별 청약 당첨자 (연령대별 당첨건수)
+      - "cmpetrt_area": 지역별 청약 경쟁률 (특별/일반공급 경쟁률)
+      - "aps_przwner":  지역별 청약 가점제 당첨자 (가점 통계)
+
+    Optional filters use odcloud's cond[...] syntax.
+
+    Authentication:
+      - Set ODCLOUD_API_KEY (Authorization header), or
+      - Set ODCLOUD_SERVICE_KEY (serviceKey query parameter).
+
+    Args:
+        stat_kind: Which stats endpoint to call (see choices above).
+        stat_year_month: Provided year-month in YYYYMM (maps to STAT_DE).
+        area_code: Subscription area code (maps to SUBSCRPT_AREA_CODE).
+        reside_secd: Residence section code (maps to RESIDE_SECD, used by some endpoints).
+        page: Page number (1-based).
+        per_page: Items per page.
+        return_type: Response type, typically "JSON".
+
+    Returns:
+        total_count/items/page/per_page/current_count/match_count plus the chosen stat_kind.
+        error/message: Present on API/network/config failure.
+    """
+    if page < 1:
+        return {"error": "validation_error", "message": "page must be >= 1"}
+    if per_page < 1:
+        return {"error": "validation_error", "message": "per_page must be >= 1"}
+
+    endpoint_map: dict[str, str] = {
+        "reqst_area": "getAPTReqstAreaStat",
+        "reqst_age": "getAPTReqstAgeStat",
+        "przwner_area": "getAPTPrzwnerAreaStat",
+        "przwner_age": "getAPTPrzwnerAgeStat",
+        "cmpetrt_area": "getAPTCmpetrtAreaStat",
+        "aps_przwner": "getAPTApsPrzwnerStat",
+    }
+    endpoint = endpoint_map.get(stat_kind)
+    if endpoint is None:
+        return {
+            "error": "validation_error",
+            "message": f"Invalid stat_kind. Expected one of: {', '.join(endpoint_map)}",
+        }
+
+    err = _check_odcloud_key()
+    if err:
+        return err
+
+    mode, key = _get_odcloud_key()
+    headers: dict[str, str] | None = None
+    params: dict[str, Any] = {"page": page, "perPage": per_page, "returnType": return_type}
+    if mode == "authorization":
+        headers = {"Authorization": key}
+    elif mode == "serviceKey":
+        params["serviceKey"] = key
+
+    if stat_year_month:
+        params["cond[STAT_DE::EQ]"] = stat_year_month
+    if area_code:
+        params["cond[SUBSCRPT_AREA_CODE::EQ]"] = area_code
+    if reside_secd:
+        params["cond[RESIDE_SECD::EQ]"] = reside_secd
+
+    url = f"{_APPLYHOME_STAT_BASE_URL}/{endpoint}?{urllib.parse.urlencode(params)}"
+    payload, fetch_err = await _fetch_json(url, headers=headers)
+    if fetch_err:
+        return fetch_err
+    if not isinstance(payload, dict):
+        return {"error": "parse_error", "message": "Unexpected response type"}
+
+    return {
+        "stat_kind": stat_kind,
+        "total_count": int(payload.get("totalCount") or 0),
+        "items": payload.get("data") or [],
+        "page": int(payload.get("page") or page),
+        "per_page": int(payload.get("perPage") or per_page),
+        "current_count": int(payload.get("currentCount") or 0),
+        "match_count": int(payload.get("matchCount") or 0),
+    }
+
+
+# ---------------------------------------------------------------------------
+# Tool 12: onbid next-gen bid result list (data.go.kr, B010003)
+# ---------------------------------------------------------------------------
+
+
+def _onbid_extract_items(payload: dict[str, Any]) -> tuple[str, dict[str, Any], list[dict[str, Any]]]:
+    """Extract (result_code, body, items) from an Onbid JSON response."""
+    if "response" in payload and isinstance(payload["response"], dict):
+        response = payload["response"]
+        header = response.get("header") or {}
+        body = response.get("body") or {}
+    else:
+        header = payload
+        body = payload
+
+    result_code = str(header.get("resultCode") or "")
+
+    items_obj = body.get("items")
+    items: Any = None
+    if isinstance(items_obj, dict):
+        items = items_obj.get("item")
+    elif isinstance(items_obj, list):
+        items = items_obj
+    else:
+        items = body.get("item")
+
+    if items is None:
+        return result_code, body, []
+    if isinstance(items, dict):
+        return result_code, body, [items]
+    if isinstance(items, list):
+        out: list[dict[str, Any]] = []
+        for it in items:
+            if isinstance(it, dict):
+                out.append(it)
+        return result_code, body, out
+    return result_code, body, []
+
+
+@mcp.tool()
+async def get_public_auction_items(
+    page_no: int = 1,
+    num_of_rows: int = 20,
+    cltr_type_cd: str | None = None,
+    prpt_div_cd: str | None = None,
+    dsps_mthod_cd: str | None = None,
+    bid_div_cd: str | None = None,
+    lctn_sdnm: str | None = None,
+    lctn_sggnm: str | None = None,
+    lctn_emd_nm: str | None = None,
+    opbd_dt_start: str | None = None,
+    opbd_dt_end: str | None = None,
+    apsl_evl_amt_start: int | None = None,
+    apsl_evl_amt_end: int | None = None,
+    lowst_bid_prc_start: int | None = None,
+    lowst_bid_prc_end: int | None = None,
+    pbct_stat_cd: str | None = None,
+    onbid_cltr_nm: str | None = None,
+) -> dict[str, Any]:
+    """Return Onbid next-gen (B010003) bid result list for public auction items.
+
+    This tool calls:
+      - OnbidCltrBidRsltListSrvc/getCltrBidRsltList
+
+    Authentication:
+      - Set ONBID_API_KEY (recommended), or
+      - Reuse DATA_GO_KR_API_KEY.
+
+    Args:
+        page_no: Page number (1-based).
+        num_of_rows: Items per page.
+        cltr_type_cd: Item type code (e.g., "0001" real estate).
+        prpt_div_cd: Property division code.
+        dsps_mthod_cd: Disposal method code (e.g., "0001" sale, "0002" lease).
+        bid_div_cd: Bid division code.
+        lctn_sdnm/lctn_sggnm/lctn_emd_nm: Location (sido/sgg/emd) names.
+        opbd_dt_start/opbd_dt_end: Opening date range (yyyyMMdd).
+        apsl_evl_amt_start/end: Appraisal amount range (won).
+        lowst_bid_prc_start/end: Lowest bid price range (won).
+        pbct_stat_cd: Bid result status code.
+        onbid_cltr_nm: Item name keyword.
+
+    Returns:
+        total_count: Total record count.
+        items: Item list (raw fields from the API).
+        page_no: Current page number.
+        num_of_rows: Page size.
+        error/message: Present on API/network/config failure.
+    """
+    if page_no < 1:
+        return {"error": "validation_error", "message": "page_no must be >= 1"}
+    if num_of_rows < 1:
+        return {"error": "validation_error", "message": "num_of_rows must be >= 1"}
+
+    err = _check_onbid_api_key()
+    if err:
+        return err
+
+    service_key = _get_data_go_kr_key_for_onbid()
+    params: dict[str, Any] = {
+        "pageNo": page_no,
+        "numOfRows": num_of_rows,
+        "resultType": "json",
+    }
+    if cltr_type_cd:
+        params["cltrTypeCd"] = cltr_type_cd
+    if prpt_div_cd:
+        params["prptDivCd"] = prpt_div_cd
+    if dsps_mthod_cd:
+        params["dspsMthodCd"] = dsps_mthod_cd
+    if bid_div_cd:
+        params["bidDivCd"] = bid_div_cd
+    if lctn_sdnm:
+        params["lctnSdnm"] = lctn_sdnm
+    if lctn_sggnm:
+        params["lctnSggnm"] = lctn_sggnm
+    if lctn_emd_nm:
+        params["lctnEmdNm"] = lctn_emd_nm
+    if opbd_dt_start:
+        params["opbdDtStart"] = opbd_dt_start
+    if opbd_dt_end:
+        params["opbdDtEnd"] = opbd_dt_end
+    if apsl_evl_amt_start is not None:
+        params["apslEvlAmtStart"] = apsl_evl_amt_start
+    if apsl_evl_amt_end is not None:
+        params["apslEvlAmtEnd"] = apsl_evl_amt_end
+    if lowst_bid_prc_start is not None:
+        params["lowstBidPrcStart"] = lowst_bid_prc_start
+    if lowst_bid_prc_end is not None:
+        params["lowstBidPrcEnd"] = lowst_bid_prc_end
+    if pbct_stat_cd:
+        params["pbctStatCd"] = pbct_stat_cd
+    if onbid_cltr_nm:
+        params["onbidCltrNm"] = onbid_cltr_nm
+
+    url = _build_url_with_service_key(_ONBID_BID_RESULT_LIST_URL, service_key, params)
+    payload, fetch_err = await _fetch_json(url)
+    if fetch_err:
+        return fetch_err
+    if not isinstance(payload, dict):
+        return {"error": "parse_error", "message": "Unexpected response type"}
+
+    result_code, body, items = _onbid_extract_items(payload)
+    if result_code and result_code not in {"00", "000"}:
+        return {
+            "error": "api_error",
+            "code": result_code,
+            "message": str((payload.get("resultMsg") or "")).strip() or "Onbid API error",
+        }
+
+    try:
+        total_count = int(body.get("totalCount") or 0)
+    except (TypeError, ValueError):
+        total_count = 0
+
+    return {
+        "total_count": total_count,
+        "items": items,
+        "page_no": int(body.get("pageNo") or page_no),
+        "num_of_rows": int(body.get("numOfRows") or num_of_rows),
+    }
 
 
 if __name__ == "__main__":

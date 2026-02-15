@@ -15,6 +15,11 @@ DATA_GO_KR_API_KEY=your_api_key_here
 Obtain the API key from [공공데이터포털](https://www.data.go.kr).
 Service name: 국토교통부_아파트매매_실거래가_자료
 
+This project reuses `DATA_GO_KR_API_KEY` for Applyhome(odcloud) and Onbid(B010003) by default.
+If you want to override:
+- Applyhome: `ODCLOUD_API_KEY` (Authorization header) or `ODCLOUD_SERVICE_KEY` (query param)
+- Onbid: `ONBID_API_KEY`
+
 `.env` is listed in `.gitignore` and will not be committed.
 Both MCP Inspector and Claude Desktop require this key to function correctly.
 

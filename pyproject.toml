@@ -80,6 +80,11 @@ addopts = "--cov=src/real_estate --cov-report=term-missing --cov-fail-under=80"
 [tool.coverage.run]
 source = ["src/real_estate"]
 branch = true
+omit = [
+    "src/real_estate/apiapp/*",
+    "src/real_estate/ui/*",
+    "src/real_estate/common_utils/hwp_parser.py",
+]
 
 [tool.coverage.report]
 exclude_lines = [

@@ -8,8 +8,8 @@ import respx
 from httpx import Response
 
 from real_estate.mcp_server.server import (
-    _build_summary,
-    _parse_trades,
+    _build_trade_summary,
+    _parse_apt_trades,
     get_apartment_trades,
 )
 
@@ -85,54 +85,54 @@ _API_URL = "https://apis.data.go.kr/1613000/RTMSDataSvcAptTrade/getRTMSDataSvcAp
 
 
 # ---------------------------------------------------------------------------
-# _parse_trades unit tests
+# _parse_apt_trades unit tests
 # ---------------------------------------------------------------------------
 
 
-class TestParseTrades:
-    """Unit tests for XML parsing logic."""
+class TestParseAptTrades:
+    """Unit tests for apartment trade XML parsing logic."""
 
     def test_normal_response_returns_items(self) -> None:
         """Normal XML returns 2 items after excluding the cancelled deal."""
-        items, error_code = _parse_trades(_XML_OK)
+        items, error_code = _parse_apt_trades(_XML_OK)
         assert error_code is None
         assert len(items) == 2  # cdealType=O item excluded
 
     def test_deal_amount_comma_removed(self) -> None:
         """Commas in dealAmount are stripped and converted to int."""
-        items, _ = _parse_trades(_XML_OK)
+        items, _ = _parse_apt_trades(_XML_OK)
         assert items[0]["price_10k"] == 135000
 
     def test_trade_date_formatted(self) -> None:
         """Trade date is combined into YYYY-MM-DD format."""
-        items, _ = _parse_trades(_XML_OK)
+        items, _ = _parse_apt_trades(_XML_OK)
         assert items[0]["trade_date"] == "2025-01-15"
 
     def test_cancelled_deal_excluded(self) -> None:
         """Items with cdealType=O are not included in the result."""
-        items, _ = _parse_trades(_XML_OK)
+        items, _ = _parse_apt_trades(_XML_OK)
         names = [it["apt_name"] for it in items]
         assert "취소단지" not in names
 
     def test_error_code_returned_on_no_data(self) -> None:
         """A resultCode other than 000 returns an error_code."""
-        items, error_code = _parse_trades(_XML_NO_DATA)
+        items, error_code = _parse_apt_trades(_XML_NO_DATA)
         assert error_code == "03"
         assert items == []
 
 
 # ---------------------------------------------------------------------------
-# _build_summary unit tests
+# _build_trade_summary unit tests
 # ---------------------------------------------------------------------------
 
 
-class TestBuildSummary:
-    """Unit tests for summary statistics calculation."""
+class TestBuildTradeSummary:
+    """Unit tests for trade summary statistics calculation."""
 
     def test_summary_values(self) -> None:
         """Median, min, max, and count are calculated correctly."""
         items = [{"price_10k": 90000}, {"price_10k": 135000}]
-        summary = _build_summary(items)
+        summary = _build_trade_summary(items)
         assert summary["median_price_10k"] == 112500
         assert summary["min_price_10k"] == 90000
         assert summary["max_price_10k"] == 135000
@@ -140,7 +140,7 @@ class TestBuildSummary:
 
     def test_empty_items_returns_zeros(self) -> None:
         """An empty list returns all zeros."""
-        summary = _build_summary([])
+        summary = _build_trade_summary([])
         assert summary["sample_count"] == 0
         assert summary["median_price_10k"] == 0
 

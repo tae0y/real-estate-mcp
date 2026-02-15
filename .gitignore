@@ -1,6 +1,7 @@
 # Local files
 gitignore/
 .arxiv/
+.coverage
 
 # Python-generated files
 __pycache__/

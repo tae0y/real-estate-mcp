@@ -5,6 +5,7 @@ various real estate trade/rent records through natural language.
 
 Tools:
   - get_region_code: region name → 5-digit legal district code
+  - get_current_year_month: current year-month in YYYYMM format
   - get_apartment_trades: apartment sale records + summary stats
   - get_apartment_rent: apartment lease/rent records + summary stats
   - get_officetel_trades: officetel sale records + summary stats
@@ -252,6 +253,27 @@ def get_region_code(query: str) -> dict[str, Any]:
         error/message: Present when no match is found
     """
     return search_region_code(query)
+
+
+# ---------------------------------------------------------------------------
+# Tool 2: current year-month
+# ---------------------------------------------------------------------------
+
+
+@mcp.tool()
+def get_current_year_month() -> dict[str, str]:
+    """Return the current year and month in YYYYMM format for use with trade/rent tools.
+
+    Call this tool when the user asks about current or recent transactions
+    without specifying a year_month.
+
+    Returns:
+        year_month: Current year-month string in YYYYMM format (e.g. "202602")
+    """
+    from datetime import datetime, timezone
+
+    now = datetime.now(tz=timezone.utc)
+    return {"year_month": now.strftime("%Y%m")}
 
 
 # ---------------------------------------------------------------------------
@@ -673,7 +695,7 @@ async def get_apartment_trades(
 
     Args:
         region_code: 5-digit legal district code (returned by get_region_code).
-        year_month: Target year-month in YYYYMM format (e.g. "202501").
+        year_month: Target year-month in YYYYMM format (e.g. "202501"). Call get_current_year_month if not specified by the user.
         num_of_rows: Maximum number of records to return. Default 100.
 
     Returns:
@@ -707,7 +729,7 @@ async def get_apartment_rent(
 
     Args:
         region_code: 5-digit legal district code (returned by get_region_code).
-        year_month: Target year-month in YYYYMM format (e.g. "202501").
+        year_month: Target year-month in YYYYMM format (e.g. "202501"). Call get_current_year_month if not specified by the user.
         num_of_rows: Maximum number of records to return. Default 100.
 
     Returns:
@@ -744,7 +766,7 @@ async def get_officetel_trades(
 
     Args:
         region_code: 5-digit legal district code (returned by get_region_code).
-        year_month: Target year-month in YYYYMM format (e.g. "202501").
+        year_month: Target year-month in YYYYMM format (e.g. "202501"). Call get_current_year_month if not specified by the user.
         num_of_rows: Maximum number of records to return. Default 100.
 
     Returns:
@@ -777,7 +799,7 @@ async def get_officetel_rent(
 
     Args:
         region_code: 5-digit legal district code (returned by get_region_code).
-        year_month: Target year-month in YYYYMM format (e.g. "202501").
+        year_month: Target year-month in YYYYMM format (e.g. "202501"). Call get_current_year_month if not specified by the user.
         num_of_rows: Maximum number of records to return. Default 100.
 
     Returns:
@@ -812,7 +834,7 @@ async def get_villa_trades(
 
     Args:
         region_code: 5-digit legal district code (returned by get_region_code).
-        year_month: Target year-month in YYYYMM format (e.g. "202501").
+        year_month: Target year-month in YYYYMM format (e.g. "202501"). Call get_current_year_month if not specified by the user.
         num_of_rows: Maximum number of records to return. Default 100.
 
     Returns:
@@ -845,7 +867,7 @@ async def get_single_house_trades(
 
     Args:
         region_code: 5-digit legal district code (returned by get_region_code).
-        year_month: Target year-month in YYYYMM format (e.g. "202501").
+        year_month: Target year-month in YYYYMM format (e.g. "202501"). Call get_current_year_month if not specified by the user.
         num_of_rows: Maximum number of records to return. Default 100.
 
     Returns:
@@ -878,7 +900,7 @@ async def get_single_house_rent(
 
     Args:
         region_code: 5-digit legal district code (returned by get_region_code).
-        year_month: Target year-month in YYYYMM format (e.g. "202501").
+        year_month: Target year-month in YYYYMM format (e.g. "202501"). Call get_current_year_month if not specified by the user.
         num_of_rows: Maximum number of records to return. Default 100.
 
     Returns:
@@ -916,7 +938,7 @@ async def get_commercial_trade(
 
     Args:
         region_code: 5-digit legal district code (returned by get_region_code).
-        year_month: Target year-month in YYYYMM format (e.g. "202501").
+        year_month: Target year-month in YYYYMM format (e.g. "202501"). Call get_current_year_month if not specified by the user.
         num_of_rows: Maximum number of records to return. Default 100.
 
     Returns:

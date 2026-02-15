@@ -36,14 +36,24 @@ Inspector does not load `.env` automatically — the API key must be entered dir
 
 ## Registering with Claude Desktop
 
-Add the following to `~/Library/Application Support/Claude/claude_desktop_config.json`:
+Open the config file:
+
+```bash
+open "$HOME/Library/Application Support/Claude/claude_desktop_config.json"
+```
+
+Add the `real-estate` entry under `mcpServers`:
 
 ```json
 {
   "mcpServers": {
     "real-estate": {
       "command": "uv",
-      "args": ["run", "--directory", "/absolute/path/to/claude-real-estate-openapi", "python", "src/real_estate/mcp_server/server.py"],
+      "args": [
+        "run",
+        "--directory", "/Users/bachtaeyeong/10_SrcHub/claude-real-estate-openapi",
+        "python", "src/real_estate/mcp_server/server.py"
+      ],
       "env": {
         "DATA_GO_KR_API_KEY": "your_api_key_here"
       }
@@ -52,4 +62,4 @@ Add the following to `~/Library/Application Support/Claude/claude_desktop_config
 }
 ```
 
-Specify the API key in the `env` block, or set it as a system environment variable beforehand.
+Restart Claude Desktop after saving. The `real-estate` server will appear in the tool list.

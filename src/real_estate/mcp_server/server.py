@@ -26,6 +26,12 @@ Korean housing-type keyword mapping (for tool selection):
   - "단독", "다가구", "단독/다가구" → get_single_house_trades / get_single_house_rent
   - "아파트외" (비아파트) → If subtype is not specified, prefer calling:
     get_villa_trades + get_single_house_trades (and optionally officetel tools if "오피스텔" is included).
+
+Korean "subscription" keyword mapping (for tool selection):
+  - "청약", "분양", "모집공고", "청약 일정", "당첨자 발표", "계약 일정"
+    → get_apt_subscription_info
+  - "청약 경쟁률", "청약 신청자", "청약 당첨자", "가점", "가점제"
+    → get_apt_subscription_results
 """
 
 from __future__ import annotations
@@ -69,6 +75,13 @@ _APPLYHOME_STAT_BASE_URL = "https://api.odcloud.kr/api/ApplyhomeStatSvc/v1"
 
 _ONBID_BID_RESULT_LIST_URL = (
     "http://apis.data.go.kr/B010003/OnbidCltrBidRsltListSrvc/getCltrBidRsltList"
+)
+_ONBID_BID_RESULT_DETAIL_URL = (
+    "http://apis.data.go.kr/B010003/OnbidCltrBidRsltDtlSrvc/getCltrBidRsltDtl"
+)
+
+_ONBID_THING_INFO_LIST_URL = (
+    "http://openapi.onbid.co.kr/openapi/services/ThingInfoInquireSvc/getUnifyUsageCltr"
 )
 
 _ERROR_MESSAGES: dict[str, str] = {
@@ -216,7 +229,8 @@ def _get_odcloud_key() -> tuple[str, str]:
     # Project convention: reuse DATA_GO_KR_API_KEY unless explicitly overridden.
     fallback_key = os.getenv("DATA_GO_KR_API_KEY", "")
     if fallback_key:
-        return "authorization", fallback_key
+        # odcloud supports serviceKey query param; this tends to be the least ambiguous mode.
+        return "serviceKey", fallback_key
     return "", ""
 
 
@@ -240,6 +254,18 @@ def _get_total_count(root: Any) -> int:
         return int(root.findtext(".//totalCount") or "0")
     except ValueError:
         return 0
+
+
+def _get_total_count_onbid(root: Any) -> int:
+    """Extract total count from an Onbid ThingInfoInquireSvc XML response."""
+    for tag in ("TotalCount", "totalCount", "totalcount"):
+        raw = root.findtext(f".//{tag}")
+        if raw:
+            try:
+                return int(raw)
+            except ValueError:
+                return 0
+    return 0
 
 
 def _txt(item: Any, tag: str) -> str:
@@ -1098,9 +1124,16 @@ async def get_apt_subscription_info(
 ) -> dict[str, Any]:
     """Return Applyhome (청약홈) APT subscription notice metadata.
 
+    Korean keywords: 청약, 분양, 모집공고, 청약 일정, 당첨자 발표, 계약 일정
+
+    Use this tool when the user asks:
+      - "청약(분양) 공고를 보고 싶어", "이번 달 모집공고 알려줘"
+      - "청약 접수 시작/종료일, 당첨자 발표일이 언제야?"
+      - "어떤 단지(주택명)가 분양 예정이야?"
+
     This tool returns APT notice metadata such as notice number, house name,
     location, schedule dates (announcement, application, winner, contract),
-    and operator/constructor information.
+    and operator/constructor information. It is not tied to region_code.
 
     Authentication:
       - Set ODCLOUD_API_KEY (Authorization header), or
@@ -1170,6 +1203,16 @@ async def get_apt_subscription_results(
     return_type: str = "JSON",
 ) -> dict[str, Any]:
     """Return Applyhome (청약홈) subscription stats: requests, winners, rates, and scores.
+
+    Korean keywords: 청약 경쟁률, 청약 신청자, 청약 당첨자, 가점, 가점제
+
+    Use this tool when the user asks:
+      - "마포구(서울) 청약 경쟁률이 어때?"
+      - "청약 신청자/당첨자 통계가 궁금해"
+      - "가점 평균/중앙값/최고점은?"
+
+    This tool provides aggregated statistics, not individual notice schedules.
+    For schedules (접수/발표/계약일), use get_apt_subscription_info.
 
     stat_kind choices:
       - "reqst_area": 지역별 청약 신청자 (연령대별 신청건수)
@@ -1294,6 +1337,33 @@ def _onbid_extract_items(payload: dict[str, Any]) -> tuple[str, dict[str, Any], 
     return result_code, body, []
 
 
+def _parse_onbid_thing_info_list_xml(
+    xml_text: str,
+) -> tuple[list[dict[str, Any]], int, str | None, str | None]:
+    """Parse Onbid ThingInfoInquireSvc list XML response.
+
+    Returns:
+        items: list of dicts (tag -> text) per item
+        total_count: total count parsed from the XML
+        error_code: resultCode when not successful, else None
+        error_message: resultMsg when not successful, else None
+    """
+    root = xml_fromstring(xml_text)
+    result_code = (root.findtext(".//resultCode") or "").strip()
+    result_msg = (root.findtext(".//resultMsg") or "").strip()
+    if result_code != "00":
+        return [], 0, result_code or None, result_msg or None
+
+    items: list[dict[str, Any]] = []
+    for item in root.findall(".//item"):
+        record: dict[str, Any] = {}
+        for child in list(item):
+            record[child.tag] = (child.text or "").strip()
+        items.append(record)
+
+    return items, _get_total_count_onbid(root), None, None
+
+
 @mcp.tool()
 async def get_public_auction_items(
     page_no: int = 1,
@@ -1415,6 +1485,193 @@ async def get_public_auction_items(
         "items": items,
         "page_no": int(body.get("pageNo") or page_no),
         "num_of_rows": int(body.get("numOfRows") or num_of_rows),
+    }
+
+
+@mcp.tool()
+async def get_public_auction_item_detail(
+    cltr_mng_no: str,
+    pbct_cdtn_no: str,
+    page_no: int = 1,
+    num_of_rows: int = 20,
+) -> dict[str, Any]:
+    """Return Onbid next-gen (B010003) bid result detail for a single item.
+
+    This tool calls:
+      - OnbidCltrBidRsltDtlSrvc/getCltrBidRsltDtl
+
+    Args:
+        cltr_mng_no: 물건관리번호 (cltrMngNo).
+        pbct_cdtn_no: 공매조건번호 (pbctCdtnNo).
+        page_no: Page number (1-based).
+        num_of_rows: Items per page.
+
+    Returns:
+        total_count: Total record count.
+        items: Detail item list (raw fields from the API).
+        page_no: Current page number.
+        num_of_rows: Page size.
+        error/message: Present on API/network/config failure.
+    """
+    if not cltr_mng_no.strip():
+        return {"error": "validation_error", "message": "cltr_mng_no is required"}
+    if not pbct_cdtn_no.strip():
+        return {"error": "validation_error", "message": "pbct_cdtn_no is required"}
+    if page_no < 1:
+        return {"error": "validation_error", "message": "page_no must be >= 1"}
+    if num_of_rows < 1:
+        return {"error": "validation_error", "message": "num_of_rows must be >= 1"}
+
+    err = _check_onbid_api_key()
+    if err:
+        return err
+
+    service_key = _get_data_go_kr_key_for_onbid()
+    params: dict[str, Any] = {
+        "pageNo": page_no,
+        "numOfRows": num_of_rows,
+        "resultType": "json",
+        "cltrMngNo": cltr_mng_no,
+        "pbctCdtnNo": pbct_cdtn_no,
+    }
+
+    url = _build_url_with_service_key(_ONBID_BID_RESULT_DETAIL_URL, service_key, params)
+    payload, fetch_err = await _fetch_json(url)
+    if fetch_err:
+        return fetch_err
+    if not isinstance(payload, dict):
+        return {"error": "parse_error", "message": "Unexpected response type"}
+
+    result_code, body, items = _onbid_extract_items(payload)
+    if result_code and result_code not in {"00", "000"}:
+        return {
+            "error": "api_error",
+            "code": result_code,
+            "message": str((payload.get("resultMsg") or "")).strip() or "Onbid API error",
+        }
+
+    try:
+        total_count = int(body.get("totalCount") or 0)
+    except (TypeError, ValueError):
+        total_count = 0
+
+    return {
+        "total_count": total_count,
+        "items": items,
+        "page_no": int(body.get("pageNo") or page_no),
+        "num_of_rows": int(body.get("numOfRows") or num_of_rows),
+    }
+
+
+@mcp.tool()
+async def get_onbid_thing_info_list(
+    page_no: int = 1,
+    num_of_rows: int = 20,
+    dpsl_mtd_cd: str | None = None,
+    ctgr_hirk_id: str | None = None,
+    ctgr_hirk_id_mid: str | None = None,
+    sido: str | None = None,
+    sgk: str | None = None,
+    emd: str | None = None,
+    goods_price_from: int | None = None,
+    goods_price_to: int | None = None,
+    open_price_from: int | None = None,
+    open_price_to: int | None = None,
+    pbct_begn_dtm: str | None = None,
+    pbct_cls_dtm: str | None = None,
+    cltr_nm: str | None = None,
+) -> dict[str, Any]:
+    """Return Onbid ThingInfoInquireSvc (물건정보조회서비스) list items.
+
+    Calls:
+      - ThingInfoInquireSvc/getUnifyUsageCltr
+
+    Notes:
+      - The guide warns that requests from Python programs may be restricted.
+      - Response is XML; this tool returns raw tag->text dicts per item.
+
+    Args:
+        page_no: Page number (1-based).
+        num_of_rows: Items per page.
+        dpsl_mtd_cd: 처분방식코드 ("0001" 매각, "0002" 임대/대부).
+        ctgr_hirk_id: 카테고리상위ID.
+        ctgr_hirk_id_mid: 카테고리상위ID(중간).
+        sido/sgk/emd: 소재지(시도/시군구/읍면동).
+        goods_price_from/to: 감정가 범위.
+        open_price_from/to: 최저입찰가 범위.
+        pbct_begn_dtm/pbct_cls_dtm: 입찰일자 From/To (YYYYMMDD).
+        cltr_nm: 물건명 검색어.
+
+    Returns:
+        total_count: Total record count.
+        items: List of raw records.
+        page_no: Current page number.
+        num_of_rows: Page size.
+        error/message: Present on API/network/config failure.
+    """
+    if page_no < 1:
+        return {"error": "validation_error", "message": "page_no must be >= 1"}
+    if num_of_rows < 1:
+        return {"error": "validation_error", "message": "num_of_rows must be >= 1"}
+
+    err = _check_onbid_api_key()
+    if err:
+        return err
+
+    service_key = _get_data_go_kr_key_for_onbid()
+    params: dict[str, Any] = {"pageNo": page_no, "numOfRows": num_of_rows}
+    if dpsl_mtd_cd:
+        params["DPSL_MTD_CD"] = dpsl_mtd_cd
+    if ctgr_hirk_id:
+        params["CTGR_HIRK_ID"] = ctgr_hirk_id
+    if ctgr_hirk_id_mid:
+        params["CTGR_HIRK_ID_MID"] = ctgr_hirk_id_mid
+    if sido:
+        params["SIDO"] = sido
+    if sgk:
+        params["SGK"] = sgk
+    if emd:
+        params["EMD"] = emd
+    if goods_price_from is not None:
+        params["GOODS_PRICE_FROM"] = goods_price_from
+    if goods_price_to is not None:
+        params["GOODS_PRICE_TO"] = goods_price_to
+    if open_price_from is not None:
+        params["OPEN_PRICE_FROM"] = open_price_from
+    if open_price_to is not None:
+        params["OPEN_PRICE_TO"] = open_price_to
+    if pbct_begn_dtm:
+        params["PBCT_BEGN_DTM"] = pbct_begn_dtm
+    if pbct_cls_dtm:
+        params["PBCT_CLS_DTM"] = pbct_cls_dtm
+    if cltr_nm:
+        params["CLTR_NM"] = cltr_nm
+
+    url = _build_url_with_service_key(_ONBID_THING_INFO_LIST_URL, service_key, params)
+    xml_text, fetch_err = await _fetch_xml(url)
+    if fetch_err:
+        return fetch_err
+    assert xml_text is not None
+
+    try:
+        items, total_count, error_code, error_message = _parse_onbid_thing_info_list_xml(
+            xml_text
+        )
+    except XmlParseError as exc:
+        return {"error": "parse_error", "message": f"XML parse failed: {exc}"}
+
+    if error_code is not None:
+        return {
+            "error": "api_error",
+            "code": error_code,
+            "message": error_message or "Onbid API error",
+        }
+
+    return {
+        "total_count": total_count,
+        "items": items,
+        "page_no": page_no,
+        "num_of_rows": num_of_rows,
     }
 
 

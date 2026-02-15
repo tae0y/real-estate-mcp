@@ -23,7 +23,7 @@ from mcp.server.fastmcp import FastMCP
 # Load .env from project root (ignored if file is absent)
 load_dotenv(Path(__file__).parent.parent.parent.parent / ".env")
 
-from real_estate.data.region_code import search_region_code  # noqa: E402
+from real_estate.data.region_code import RegionResult, search_region_code  # noqa: E402
 
 mcp = FastMCP("real-estate")
 
@@ -36,7 +36,7 @@ _API_BASE = "https://apis.data.go.kr/1613000/RTMSDataSvcAptTrade/getRTMSDataSvcA
 
 
 @mcp.tool()
-def get_region_code(query: str) -> dict[str, Any]:
+def get_region_code(query: str) -> RegionResult:
     """Convert a user-supplied region name to a 5-digit legal district code for the MOLIT API.
 
     Must be called before get_apartment_trades.

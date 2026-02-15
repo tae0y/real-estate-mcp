@@ -6,7 +6,6 @@ from pathlib import Path
 
 import olefile
 
-
 _HWPTAG_PARA_TEXT = 67
 
 

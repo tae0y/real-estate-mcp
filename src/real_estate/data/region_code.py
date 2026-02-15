@@ -9,7 +9,7 @@ Rows representing a gu/gun district have "00000" in the last 5 digits.
 """
 
 from pathlib import Path
-from typing import TypedDict
+from typing import Any, TypedDict
 
 REGION_FILE = Path(__file__).parent.parent / "resources" / "region_codes.txt"
 
@@ -71,7 +71,7 @@ def _is_gu_gun(ten_digit: str) -> bool:
     return ten_digit[5:] == "00000"
 
 
-def search_region_code(query: str) -> RegionResult:
+def search_region_code(query: str) -> dict[str, Any]:
     """Convert a free-form region name to a legal district code.
 
     Parameters:

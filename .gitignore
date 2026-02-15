@@ -15,7 +15,6 @@ wheels/
 
 # Environment variables
 .env
-.env.*
 
 # IDE settings
 .vscode/

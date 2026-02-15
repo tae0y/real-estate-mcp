@@ -10,6 +10,7 @@ Claude Desktop에 등록하여 자연어 대화로
 
 import os
 import statistics
+import urllib.parse
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
@@ -177,6 +178,11 @@ async def get_apartment_trades(
 
     region_code는 반드시 get_region_code 도구로 먼저 조회해야 한다.
 
+    조회 전략:
+    - 시세 분석 시 현재 연월 기준 직전 6개월치(연속된 6개 연월)를 각각 호출해 추세를 파악한다.
+    - 계절성·연간 변동을 확인할 때는 동월 3년치(예: 202412, 202312, 202212)도 조회한다.
+    - 현재달 데이터는 집계 미완료로 건수가 적을 수 있으므로 해석에 유의한다.
+
     Args:
         region_code: 법정동코드 5자리 (get_region_code 반환값).
         year_month: 조회 연월 (YYYYMM, 예: "202501").
@@ -196,17 +202,17 @@ async def get_apartment_trades(
             "message": "환경변수 DATA_GO_KR_API_KEY가 설정되지 않았습니다.",
         }
 
-    params = {
-        "serviceKey": api_key,
-        "LAWD_CD": region_code,
-        "DEAL_YMD": year_month,
-        "numOfRows": str(num_of_rows),
-        "pageNo": "1",
-    }
+    # serviceKey는 URL에 직접 삽입 — httpx params 사용 시 이중 인코딩 발생
+    encoded_key = urllib.parse.quote(api_key, safe="")
+    url = (
+        f"{_API_BASE}?serviceKey={encoded_key}"
+        f"&LAWD_CD={region_code}&DEAL_YMD={year_month}"
+        f"&numOfRows={num_of_rows}&pageNo=1"
+    )
 
     try:
         async with httpx.AsyncClient(timeout=15.0) as client:
-            response = await client.get(_API_BASE, params=params)
+            response = await client.get(url)
             response.raise_for_status()
     except httpx.TimeoutException:
         return {"error": "network_error", "message": "API 서버 응답 시간 초과 (15초)"}

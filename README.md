@@ -3,6 +3,9 @@
 MCP server exposing Korea's MOLIT (국토교통부) real estate transaction API to Claude Desktop.
 Provides 14+ tools for querying apartment, officetel, villa, single-house, and commercial trade/rent data, apartment subscriptions, and public auctions.
 
+Additional project docs:
+- [Common Utils Guide](docs/common_utils.md)
+
 ## Supported Tools
 
 - [x] Apartment trade / rent (`get_apartment_trades`, `get_apartment_rent`)

@@ -6,8 +6,10 @@ This module extracts text without any styling information.
 
 from __future__ import annotations
 
+from collections.abc import Iterator
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Protocol
 from zipfile import BadZipFile, ZipFile
 
 from defusedxml import ElementTree as DefusedET
@@ -18,6 +20,13 @@ _TAG_T = f"{_W_NS}t"
 _TAG_TAB = f"{_W_NS}tab"
 _TAG_BR = f"{_W_NS}br"
 _TAG_CR = f"{_W_NS}cr"
+
+
+class _XmlNode(Protocol):
+    tag: str
+    text: str | None
+
+    def iter(self) -> Iterator[_XmlNode]: ...
 
 
 @dataclass(frozen=True)
@@ -130,7 +139,7 @@ def extract_dir_to_txt(
     return results
 
 
-def _paragraph_text(p_elem: DefusedET.Element) -> str:
+def _paragraph_text(p_elem: _XmlNode) -> str:
     parts: list[str] = []
     for node in p_elem.iter():
         if node.tag == _TAG_T and node.text:

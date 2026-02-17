@@ -319,6 +319,14 @@ def _parse_int(raw: str) -> int:
         return 0
 
 
+def _parse_monthly_rent(item: Any) -> int:
+    """Parse monthlyRent field from an XML item. Empty or invalid values return 0."""
+    monthly_rent_raw = _txt(item, "monthlyRent")
+    if not monthly_rent_raw:
+        return 0
+    return _parse_amount(monthly_rent_raw) or 0
+
+
 def _make_date(item: Any) -> str:
     """Construct a YYYY-MM-DD date string from dealYear/Month/Day elements."""
     year = _txt(item, "dealYear")
@@ -643,8 +651,6 @@ def _parse_apt_rent(xml_text: str) -> tuple[list[dict[str, Any]], str | None]:
         deposit = _parse_amount(_txt(item, "deposit"))
         if deposit is None:
             continue
-        monthly_rent_raw = _txt(item, "monthlyRent")
-        monthly_rent = _parse_amount(monthly_rent_raw) if monthly_rent_raw else 0
         items.append(
             {
                 "unit_name": _txt(item, "aptNm"),
@@ -652,7 +658,7 @@ def _parse_apt_rent(xml_text: str) -> tuple[list[dict[str, Any]], str | None]:
                 "area_sqm": _parse_float(_txt(item, "excluUseAr")),
                 "floor": _parse_int(_txt(item, "floor")),
                 "deposit_10k": deposit,
-                "monthly_rent_10k": monthly_rent or 0,
+                "monthly_rent_10k": _parse_monthly_rent(item),
                 "contract_type": _txt(item, "contractType"),
                 "trade_date": _make_date(item),
                 "build_year": _parse_int(_txt(item, "buildYear")),
@@ -677,8 +683,6 @@ def _parse_officetel_rent(xml_text: str) -> tuple[list[dict[str, Any]], str | No
         deposit = _parse_amount(_txt(item, "deposit"))
         if deposit is None:
             continue
-        monthly_rent_raw = _txt(item, "monthlyRent")
-        monthly_rent = _parse_amount(monthly_rent_raw) if monthly_rent_raw else 0
         items.append(
             {
                 "unit_name": _txt(item, "offiNm"),
@@ -686,7 +690,7 @@ def _parse_officetel_rent(xml_text: str) -> tuple[list[dict[str, Any]], str | No
                 "area_sqm": _parse_float(_txt(item, "excluUseAr")),
                 "floor": _parse_int(_txt(item, "floor")),
                 "deposit_10k": deposit,
-                "monthly_rent_10k": monthly_rent or 0,
+                "monthly_rent_10k": _parse_monthly_rent(item),
                 "contract_type": _txt(item, "contractType"),
                 "trade_date": _make_date(item),
                 "build_year": _parse_int(_txt(item, "buildYear")),
@@ -713,8 +717,6 @@ def _parse_villa_rent(xml_text: str) -> tuple[list[dict[str, Any]], str | None]:
         deposit = _parse_amount(_txt(item, "deposit"))
         if deposit is None:
             continue
-        monthly_rent_raw = _txt(item, "monthlyRent")
-        monthly_rent = _parse_amount(monthly_rent_raw) if monthly_rent_raw else 0
         items.append(
             {
                 "unit_name": _txt(item, "mhouseNm"),
@@ -723,7 +725,7 @@ def _parse_villa_rent(xml_text: str) -> tuple[list[dict[str, Any]], str | None]:
                 "area_sqm": _parse_float(_txt(item, "excluUseAr")),
                 "floor": _parse_int(_txt(item, "floor")),
                 "deposit_10k": deposit,
-                "monthly_rent_10k": monthly_rent or 0,
+                "monthly_rent_10k": _parse_monthly_rent(item),
                 "contract_type": _txt(item, "contractType"),
                 "trade_date": _make_date(item),
                 "build_year": _parse_int(_txt(item, "buildYear")),
@@ -750,8 +752,6 @@ def _parse_single_house_rent(xml_text: str) -> tuple[list[dict[str, Any]], str |
         deposit = _parse_amount(_txt(item, "deposit"))
         if deposit is None:
             continue
-        monthly_rent_raw = _txt(item, "monthlyRent")
-        monthly_rent = _parse_amount(monthly_rent_raw) if monthly_rent_raw else 0
         items.append(
             {
                 "unit_name": "",  # not provided by this API
@@ -759,7 +759,7 @@ def _parse_single_house_rent(xml_text: str) -> tuple[list[dict[str, Any]], str |
                 "house_type": _txt(item, "houseType"),
                 "area_sqm": _parse_float(_txt(item, "totalFloorAr")),
                 "deposit_10k": deposit,
-                "monthly_rent_10k": monthly_rent or 0,
+                "monthly_rent_10k": _parse_monthly_rent(item),
                 "contract_type": _txt(item, "contractType"),
                 "trade_date": _make_date(item),
                 "build_year": _parse_int(_txt(item, "buildYear")),
@@ -792,30 +792,14 @@ async def _run_trade_tool(
     Returns:
         Standardised trade response dict or error dict.
     """
-    err = _check_api_key()
-    if err:
-        return err
-
-    url = _build_url(base_url, region_code, year_month, num_of_rows)
-    xml_text, fetch_err = await _fetch_xml(url)
-    if fetch_err:
-        return fetch_err
-    assert xml_text is not None  # guaranteed: fetch_err is None only when xml_text is str
-
-    try:
-        items, error_code = parser(xml_text)
-    except XmlParseError as exc:
-        return {"error": "parse_error", "message": f"XML parse failed: {exc}"}
-
-    if error_code is not None:
-        return _api_error_response(error_code)
-
-    root = xml_fromstring(xml_text)
-    return {
-        "total_count": _get_total_count(root),
-        "items": items,
-        "summary": _build_trade_summary(items),
-    }
+    return await _run_molit_xml_tool(
+        base_url=base_url,
+        parser=parser,
+        region_code=region_code,
+        year_month=year_month,
+        num_of_rows=num_of_rows,
+        summary_builder=_build_trade_summary,
+    )
 
 
 async def _run_rent_tool(
@@ -837,6 +821,26 @@ async def _run_rent_tool(
     Returns:
         Standardised rent response dict or error dict.
     """
+    return await _run_molit_xml_tool(
+        base_url=base_url,
+        parser=parser,
+        region_code=region_code,
+        year_month=year_month,
+        num_of_rows=num_of_rows,
+        summary_builder=_build_rent_summary,
+    )
+
+
+async def _run_molit_xml_tool(
+    *,
+    base_url: str,
+    parser: Any,
+    region_code: str,
+    year_month: str,
+    num_of_rows: int,
+    summary_builder: Any,
+) -> dict[str, Any]:
+    """Shared execution flow for MOLIT trade/rent XML tools."""
     err = _check_api_key()
     if err:
         return err
@@ -859,7 +863,7 @@ async def _run_rent_tool(
     return {
         "total_count": _get_total_count(root),
         "items": items,
-        "summary": _build_rent_summary(items),
+        "summary": summary_builder(items),
     }
 
 
@@ -1455,26 +1459,20 @@ def _parse_onbid_thing_info_list_xml(
         error_code: resultCode when not successful, else None
         error_message: resultMsg when not successful, else None
     """
-    root = xml_fromstring(xml_text)
-    result_code = (root.findtext(".//resultCode") or "").strip()
-    result_msg = (root.findtext(".//resultMsg") or "").strip()
-    if result_code != "00":
-        return [], 0, result_code or None, result_msg or None
-
-    items: list[dict[str, Any]] = []
-    for item in root.findall(".//item"):
-        record: dict[str, Any] = {}
-        for child in list(item):
-            record[child.tag] = (child.text or "").strip()
-        items.append(record)
-
-    return items, _get_total_count_onbid(root), None, None
+    return _parse_onbid_xml_items(xml_text)
 
 
 def _parse_onbid_code_info_xml(
     xml_text: str,
 ) -> tuple[list[dict[str, Any]], int, str | None, str | None]:
     """Parse OnbidCodeInfoInquireSvc XML response into a list of dict records."""
+    return _parse_onbid_xml_items(xml_text)
+
+
+def _parse_onbid_xml_items(
+    xml_text: str,
+) -> tuple[list[dict[str, Any]], int, str | None, str | None]:
+    """Parse Onbid XML response into items and common metadata."""
     root = xml_fromstring(xml_text)
     result_code = (root.findtext(".//resultCode") or "").strip()
     result_msg = (root.findtext(".//resultMsg") or "").strip()

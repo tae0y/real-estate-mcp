@@ -7,11 +7,9 @@ import pytest
 import respx
 from httpx import Response
 
-from real_estate.mcp_server.server import (
-    _build_rent_summary,
-    _parse_apt_rent,
-    get_apartment_rent,
-)
+from real_estate.mcp_server._helpers import _build_rent_summary
+from real_estate.mcp_server.parsers.rent import _parse_apt_rent
+from real_estate.mcp_server.tools.rent import get_apartment_rent
 
 _XML_OK = """<?xml version="1.0" encoding="UTF-8"?>
 <response>

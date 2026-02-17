@@ -7,7 +7,7 @@ import pytest
 import respx
 from httpx import Response
 
-from real_estate.mcp_server.server import get_public_auction_items
+from real_estate.mcp_server.tools.onbid import get_public_auction_items
 
 _ONBID_URL = "http://apis.data.go.kr/B010003/OnbidCltrBidRsltListSrvc/getCltrBidRsltList"
 

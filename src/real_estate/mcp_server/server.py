@@ -47,86 +47,15 @@ Korean "onbid/public auction" keyword mapping (for tool selection):
 
 from __future__ import annotations
 
-from pathlib import Path
 from typing import Any
 
-from dotenv import load_dotenv
-
-# Load .env from project root (ignored if file is absent)
-load_dotenv(Path(__file__).parent.parent.parent.parent / ".env")
-
-import real_estate.mcp_server.tools.finance
-import real_estate.mcp_server.tools.onbid
-import real_estate.mcp_server.tools.rent
-import real_estate.mcp_server.tools.subscription
-import real_estate.mcp_server.tools.trade
+import real_estate.mcp_server.tools.finance  # noqa: F401 — registers @mcp.tool()
+import real_estate.mcp_server.tools.onbid  # noqa: F401
+import real_estate.mcp_server.tools.rent  # noqa: F401
+import real_estate.mcp_server.tools.subscription  # noqa: F401
+import real_estate.mcp_server.tools.trade  # noqa: F401
 from real_estate.mcp_server import mcp
-
-# Re-exports for test backward-compatibility
 from real_estate.mcp_server._region import search_region_code
-
-# Re-exports for backward-compatibility (tests import directly from server.py)
-from real_estate.mcp_server._helpers import (
-    _build_rent_summary,
-    _build_trade_summary,
-    _get_total_count_onbid,
-)
-from real_estate.mcp_server.parsers.onbid import (
-    _onbid_extract_items,
-    _parse_onbid_code_info_xml,
-    _parse_onbid_thing_info_list_xml,
-)
-from real_estate.mcp_server.parsers.rent import (
-    _parse_apt_rent,
-    _parse_officetel_rent,
-    _parse_single_house_rent,
-    _parse_villa_rent,
-)
-from real_estate.mcp_server.parsers.trade import (
-    _parse_apt_trades,
-    _parse_commercial_trade,
-    _parse_officetel_trades,
-    _parse_single_house_trades,
-    _parse_villa_trades,
-)
-from real_estate.mcp_server.tools.finance import (
-    calculate_compound_growth,
-    calculate_loan_payment,
-    calculate_monthly_cashflow,
-)
-from real_estate.mcp_server.tools.onbid import (
-    get_onbid_addr1_info,
-    get_onbid_addr2_info,
-    get_onbid_addr3_info,
-    get_onbid_bottom_code_info,
-    get_onbid_dtl_addr_info,
-    get_onbid_middle_code_info,
-    get_onbid_thing_info_list,
-    get_onbid_top_code_info,
-    get_public_auction_item_detail,
-    get_public_auction_items,
-)
-from real_estate.mcp_server.tools.rent import (
-    get_apartment_rent,
-    get_officetel_rent,
-    get_single_house_rent,
-    get_villa_rent,
-)
-from real_estate.mcp_server.tools.subscription import (
-    get_apt_subscription_info,
-    get_apt_subscription_results,
-)
-from real_estate.mcp_server.tools.trade import (
-    get_apartment_trades,
-    get_commercial_trade,
-    get_officetel_trades,
-    get_single_house_trades,
-    get_villa_trades,
-)
-
-# ---------------------------------------------------------------------------
-# Tool 1: region name → legal district code
-# ---------------------------------------------------------------------------
 
 
 @mcp.tool()
@@ -149,11 +78,6 @@ def get_region_code(query: str) -> dict[str, Any]:
         error/message: Present when no match is found
     """
     return search_region_code(query)
-
-
-# ---------------------------------------------------------------------------
-# Tool 2: current year-month
-# ---------------------------------------------------------------------------
 
 
 @mcp.tool()

@@ -7,16 +7,10 @@ import pytest
 import respx
 from httpx import Response
 
-from real_estate.mcp_server.server import (
-    _parse_single_house_rent,
-    _parse_single_house_trades,
-    _parse_villa_rent,
-    _parse_villa_trades,
-    get_single_house_rent,
-    get_single_house_trades,
-    get_villa_rent,
-    get_villa_trades,
-)
+from real_estate.mcp_server.parsers.rent import _parse_single_house_rent, _parse_villa_rent
+from real_estate.mcp_server.parsers.trade import _parse_single_house_trades, _parse_villa_trades
+from real_estate.mcp_server.tools.rent import get_single_house_rent, get_villa_rent
+from real_estate.mcp_server.tools.trade import get_single_house_trades, get_villa_trades
 
 # ---------------------------------------------------------------------------
 # Villa (연립다세대) XML fixtures

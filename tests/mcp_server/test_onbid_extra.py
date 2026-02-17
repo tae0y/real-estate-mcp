@@ -7,10 +7,12 @@ import pytest
 import respx
 from httpx import Response
 
-from real_estate.mcp_server.server import (
-    _get_total_count_onbid,
+from real_estate.mcp_server._helpers import _get_total_count_onbid
+from real_estate.mcp_server.parsers.onbid import (
     _onbid_extract_items,
     _parse_onbid_thing_info_list_xml,
+)
+from real_estate.mcp_server.tools.onbid import (
     get_onbid_thing_info_list,
     get_public_auction_item_detail,
 )

@@ -7,7 +7,7 @@ import pytest
 import respx
 from httpx import Response
 
-from real_estate.mcp_server.server import (
+from real_estate.mcp_server.tools.subscription import (
     get_apt_subscription_info,
     get_apt_subscription_results,
 )

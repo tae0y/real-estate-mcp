@@ -7,11 +7,9 @@ import pytest
 import respx
 from httpx import Response
 
-from real_estate.mcp_server.server import (
-    _build_trade_summary,
-    _parse_apt_trades,
-    get_apartment_trades,
-)
+from real_estate.mcp_server._helpers import _build_trade_summary
+from real_estate.mcp_server.parsers.trade import _parse_apt_trades
+from real_estate.mcp_server.tools.trade import get_apartment_trades
 
 # ---------------------------------------------------------------------------
 # Test fixtures: sample XML responses

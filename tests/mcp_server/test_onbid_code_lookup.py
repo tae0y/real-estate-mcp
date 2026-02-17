@@ -7,8 +7,8 @@ import pytest
 import respx
 from httpx import Response
 
-from real_estate.mcp_server.server import (
-    _parse_onbid_code_info_xml,
+from real_estate.mcp_server.parsers.onbid import _parse_onbid_code_info_xml
+from real_estate.mcp_server.tools.onbid import (
     get_onbid_addr1_info,
     get_onbid_addr2_info,
     get_onbid_addr3_info,

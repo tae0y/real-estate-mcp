@@ -2,7 +2,7 @@
 
 import pytest
 
-from real_estate.mcp_server.server import (
+from real_estate.mcp_server.tools.finance import (
     calculate_compound_growth,
     calculate_loan_payment,
     calculate_monthly_cashflow,

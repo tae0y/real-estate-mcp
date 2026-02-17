@@ -7,12 +7,10 @@ import pytest
 import respx
 from httpx import Response
 
-from real_estate.mcp_server.server import (
-    _parse_officetel_rent,
-    _parse_officetel_trades,
-    get_officetel_rent,
-    get_officetel_trades,
-)
+from real_estate.mcp_server.parsers.rent import _parse_officetel_rent
+from real_estate.mcp_server.parsers.trade import _parse_officetel_trades
+from real_estate.mcp_server.tools.rent import get_officetel_rent
+from real_estate.mcp_server.tools.trade import get_officetel_trades
 
 _XML_TRADE_OK = """<?xml version="1.0" encoding="UTF-8"?>
 <response>

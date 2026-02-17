@@ -2,9 +2,21 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from typing import Any
 
 from defusedxml.ElementTree import fromstring as xml_fromstring
+
+
+def _as_str_key_dict(value: Mapping[Any, Any] | object) -> dict[str, object]:
+    """Normalize mapping-like values to a dict[str, object]."""
+    if not isinstance(value, Mapping):
+        return {}
+    normalized: dict[str, object] = {}
+    for key, item in value.items():
+        if isinstance(key, str):
+            normalized[key] = item
+    return normalized
 
 
 def _get_total_count_onbid(root: Any) -> int:
@@ -20,23 +32,27 @@ def _get_total_count_onbid(root: Any) -> int:
 
 
 def _onbid_extract_items(
-    payload: dict[str, Any],
+    payload: dict[str, object],
 ) -> tuple[str, dict[str, Any], list[dict[str, Any]]]:
     """Extract (result_code, body, items) from an Onbid JSON response."""
-    if "response" in payload and isinstance(payload["response"], dict):
-        response = payload["response"]
-        header = response.get("header") or {}
-        body = response.get("body") or {}
+    response = _as_str_key_dict(payload.get("response"))
+    if response:
+        header = _as_str_key_dict(response.get("header"))
+        body = _as_str_key_dict(response.get("body"))
     else:
         header = payload
         body = payload
 
-    result_code = str(header.get("resultCode") or "")
+    result_code_value = header.get("resultCode")
+    result_code = str(result_code_value) if result_code_value is not None else ""
 
     items_obj = body.get("items")
     items: Any = None
-    if isinstance(items_obj, dict):
-        items = items_obj.get("item")
+    if isinstance(items_obj, Mapping):
+        for key, value in items_obj.items():
+            if key == "item":
+                items = value
+                break
     elif isinstance(items_obj, list):
         items = items_obj
     else:
@@ -45,12 +61,20 @@ def _onbid_extract_items(
     if items is None:
         return result_code, body, []
     if isinstance(items, dict):
-        return result_code, body, [items]
+        normalized_item: dict[str, Any] = {}
+        for key, value in items.items():
+            if isinstance(key, str):
+                normalized_item[key] = value
+        return result_code, body, [normalized_item]
     if isinstance(items, list):
         out: list[dict[str, Any]] = []
         for it in items:
-            if isinstance(it, dict):
-                out.append(it)
+            if isinstance(it, Mapping):
+                normalized_item: dict[str, Any] = {}
+                for key, value in it.items():
+                    if isinstance(key, str):
+                        normalized_item[key] = value
+                out.append(normalized_item)
         return result_code, body, out
     return result_code, body, []
 

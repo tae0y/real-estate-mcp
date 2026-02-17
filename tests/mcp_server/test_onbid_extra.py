@@ -3,6 +3,8 @@
 HTTP calls are mocked with respx so the real API is never called.
 """
 
+from typing import Any
+
 import pytest
 import respx
 from httpx import Response
@@ -68,7 +70,7 @@ class TestOnbidHelpers:
         assert _get_total_count_onbid(root) == 2
 
     def test_onbid_extract_items_handles_dict_and_list(self) -> None:
-        payload_dict = {
+        payload_dict: dict[str, Any] = {
             "response": {
                 "header": {"resultCode": "00"},
                 "body": {"items": {"item": {"a": 1}}},
@@ -78,7 +80,7 @@ class TestOnbidHelpers:
         assert code == "00"
         assert items == [{"a": 1}]
 
-        payload_list = {
+        payload_list: dict[str, Any] = {
             "response": {
                 "header": {"resultCode": "00"},
                 "body": {"items": {"item": [{"a": 1}, {"b": 2}]}},

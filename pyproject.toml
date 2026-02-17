@@ -25,6 +25,9 @@ dependencies = [
     "pillow>=12.1.1",
 ]
 
+[project.scripts]
+real-estate-mcp = "real_estate.mcp_server.server:main"
+
 [build-system]
 requires = ["uv_build>=0.9.28,<0.10.0"]
 build-backend = "uv_build"

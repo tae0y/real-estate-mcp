@@ -3,11 +3,12 @@
 Quick validation script for skills - minimal version
 """
 
-import sys
-import os
 import re
-import yaml
+import sys
 from pathlib import Path
+
+import yaml
+
 
 def validate_skill(skill_path):
     """Basic validation of a skill"""
@@ -97,7 +98,7 @@ if __name__ == "__main__":
     if len(sys.argv) != 2:
         print("Usage: python quick_validate.py <skill_directory>")
         sys.exit(1)
-    
+
     valid, message = validate_skill(sys.argv[1])
     print(message)
     sys.exit(0 if valid else 1)

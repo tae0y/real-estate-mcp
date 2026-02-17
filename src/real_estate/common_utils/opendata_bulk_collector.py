@@ -13,7 +13,7 @@ from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 
-from real_estate.mcp_server.server import get_apartment_rent, get_villa_rent
+from real_estate.mcp_server.tools.rent import get_apartment_rent, get_villa_rent
 
 _TOOL_BY_PROPERTY_TYPE = {
     "apartment": get_apartment_rent,

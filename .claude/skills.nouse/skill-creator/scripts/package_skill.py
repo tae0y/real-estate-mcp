@@ -13,6 +13,7 @@ Example:
 import sys
 import zipfile
 from pathlib import Path
+
 from quick_validate import validate_skill
 
 

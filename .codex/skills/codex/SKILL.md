@@ -1,6 +1,6 @@
 ---
 name: codex
-description: "Delegate to OpenAI Codex CLI when: (1) user explicitly requests it (codex에게 맡겨줘, codex로 해줘, 외주화해줘, codex 실행해줘, codex 리뷰 돌려줘), OR (2) the task requires autonomous repo-scale execution — writing multiple test files, file-level refactoring across many files, bulk edits (type hints, formatting, comments across a directory), or code review with a clear done condition. Do NOT delegate: design/architecture decisions, small edits (under ~20 lines), explanation-only requests, or tasks where additional context reasoning is needed first."
+description: "Delegate to OpenAI Codex CLI when: (1) user explicitly requests it (codex에게 맡겨줘, codex로 해줘, 외주화해줘, codex 실행해줘, codex 리뷰 돌려줘), OR (2) the task requires autonomous repo-scale execution — writing multiple test files, file-level refactoring across many files, bulk edits (type hints, formatting, comments across a directory), or code review with a clear done condition. Do NOT delegate: design/architecture decisions, small edits (under ~20 lines), explanation-only requests, or tasks where Claude needs to reason about context first."
 ---
 
 # Codex Delegation Skill
@@ -23,7 +23,7 @@ Examples that qualify:
 
 ## When NOT to delegate
 
-- Design or architecture decisions (reason locally first)
+- Design or architecture decisions (Claude reasons better here)
 - Small edits under ~20 lines (delegation overhead exceeds benefit)
 - Explanation-only or analysis requests (no file writes needed)
 - Tasks requiring contextual judgment before execution
@@ -53,7 +53,7 @@ codex exec \
 - `--cd` — always set to project root
 - `--sandbox workspace-write` — default; allows writes while minimising system impact
 - `--ephemeral` — prevents session state from leaking between runs
-- `-o /tmp/codex-result.txt` — saves output for review
+- `-o /tmp/codex-result.txt` — saves output for Claude to review
 
 ## Commands by task type
 

@@ -62,7 +62,7 @@ uv run bandit -c pyproject.toml -r src/
 ```
 
 On failures:
-- Lint/format issues → "Auto-fixable with the `fix` skill"
+- Lint/format issues → "Auto-fixable with the `auto-fix` skill"
 - Type errors → "Requires manual fix — locations listed above"
 - Security issues → "Review High severity first"
 

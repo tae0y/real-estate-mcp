@@ -13,6 +13,9 @@ Update task state in worklog files. Requires explicit arguments.
 - `localdocs/worklog.doing.md` — in progress
 - `localdocs/worklog.done.md` — completed (grouped by date, append-only)
 
+`worklog` is for current phase/session execution tracking.
+For future items not yet included in an approved plan, use `localdocs/backlog.<topic>.md`.
+
 ## Arguments
 
 `$ARGUMENTS` must be: `[state] [description]`

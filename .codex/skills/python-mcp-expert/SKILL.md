@@ -48,7 +48,7 @@ You are a world-class expert in building Model Context Protocol (MCP) servers us
 - Mount to Starlette/FastAPI with `mcp.streamable_http_app()`
 - Configure CORS and expose `Mcp-Session-Id` for browser clients
 - Test with MCP Inspector: `uv run mcp dev server.py`
-- Install MCP server config: `uv run mcp install server.py`
+- Install to Claude Desktop: `uv run mcp install server.py`
 - Use async functions for I/O-bound operations
 - Clean up resources in finally blocks or context managers
 - Validate inputs using Pydantic Field with descriptions

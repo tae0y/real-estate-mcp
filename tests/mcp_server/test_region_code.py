@@ -2,7 +2,7 @@
 
 import re
 
-from real_estate.data.region_code import search_region_code
+from real_estate.mcp_server._region import search_region_code
 from real_estate.mcp_server.server import get_current_year_month
 
 

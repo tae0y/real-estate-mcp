@@ -2,6 +2,7 @@
 gitignore/
 .arxiv/
 .coverage
+AGENTS.md
 
 # Python-generated files
 __pycache__/

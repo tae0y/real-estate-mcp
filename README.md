@@ -79,6 +79,86 @@ Provides 13+ tools for querying apartment, officetel, villa, single-house, and c
 
    > Paste it into the **Project Instructions** tab, not the chat input.
 
+### Configure Codex CLI
+
+1. Clone this repository locally.
+
+    ```bash
+    git clone <repository_url>
+    cd claude-real-estate-openapi
+    ```
+
+1. Register this MCP server in Codex CLI.
+
+    ```bash
+    codex mcp add real-estate \
+      --env DATA_GO_KR_API_KEY=your_api_key_here \
+      -- uv run --directory /path/to/claude-real-estate-openapi \
+      python src/real_estate/mcp_server/server.py
+    ```
+
+    If you want separate keys per service, add more `--env` options:
+
+    ```bash
+    codex mcp add real-estate \
+      --env DATA_GO_KR_API_KEY=... \
+      --env ODCLOUD_API_KEY=... \
+      --env ODCLOUD_SERVICE_KEY=... \
+      --env ONBID_API_KEY=... \
+      -- uv run --directory /path/to/claude-real-estate-openapi \
+      python src/real_estate/mcp_server/server.py
+    ```
+
+1. Verify that the server is registered.
+
+    ```bash
+    codex mcp list
+    codex mcp get real-estate
+    ```
+
+1. For better responses in Codex CLI, create an `AGENTS.md` file in the project root and paste [docs/prompt.custom-instructions-ko.md](docs/prompt.custom-instructions-ko.md) into it.
+
+   > In Codex CLI, use `AGENTS.md` (project root) instead of Claude Desktop's **Project Instructions** tab.
+
+### Configure Claude CLI
+
+1. Clone this repository locally.
+
+    ```bash
+    git clone <repository_url>
+    cd claude-real-estate-openapi
+    ```
+
+1. Register this MCP server in Claude CLI.
+
+    ```bash
+    claude mcp add -s local \
+      -e DATA_GO_KR_API_KEY=your_api_key_here \
+      real-estate -- \
+      uv run --directory /path/to/claude-real-estate-openapi \
+      python src/real_estate/mcp_server/server.py
+    ```
+
+    If you want separate keys per service, add more `-e` options:
+
+    ```bash
+    claude mcp add -s local \
+      -e DATA_GO_KR_API_KEY=... \
+      -e ODCLOUD_API_KEY=... \
+      -e ODCLOUD_SERVICE_KEY=... \
+      -e ONBID_API_KEY=... \
+      real-estate -- \
+      uv run --directory /path/to/claude-real-estate-openapi \
+      python src/real_estate/mcp_server/server.py
+    ```
+
+1. Verify that the server is registered.
+
+    ```bash
+    claude mcp list
+    claude mcp get real-estate
+    ```
+
 ### Run and Debug Locally
 
 1. Create a `.env` file in the project root.

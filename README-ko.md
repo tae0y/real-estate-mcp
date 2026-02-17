@@ -77,6 +77,86 @@ Provides 13+ tools for querying apartment, officetel, villa, single-house, and c
 
    > 파일을 채팅 입력란이 아니라 **Project Instructions** 탭에 넣어야한다.
 
+### Configure Codex CLI
+
+1. 저장소를 로컬에 클론한다.
+
+    ```bash
+    git clone <저장소_URL>
+    cd claude-real-estate-openapi
+    ```
+
+1. Codex CLI에 MCP 서버를 등록한다.
+
+    ```bash
+    codex mcp add real-estate \
+      --env DATA_GO_KR_API_KEY=your_api_key_here \
+      -- uv run --directory /path/to/claude-real-estate-openapi \
+      python src/real_estate/mcp_server/server.py
+    ```
+
+    서비스별로 키를 분리하려면 `--env`를 추가한다.
+
+    ```bash
+    codex mcp add real-estate \
+      --env DATA_GO_KR_API_KEY=... \
+      --env ODCLOUD_API_KEY=... \
+      --env ODCLOUD_SERVICE_KEY=... \
+      --env ONBID_API_KEY=... \
+      -- uv run --directory /path/to/claude-real-estate-openapi \
+      python src/real_estate/mcp_server/server.py
+    ```
+
+1. 서버 등록 상태를 확인한다.
+
+    ```bash
+    codex mcp list
+    codex mcp get real-estate
+    ```
+
+1. Codex CLI에서 더 정확한 응답을 위해 프로젝트 루트에 `AGENTS.md`를 만들고, [docs/prompt.custom-instructions-ko.md](docs/prompt.custom-instructions-ko.md) 내용을 붙여넣는다.
+
+   > Codex CLI에서는 Claude Desktop의 **Project Instructions** 탭 대신 프로젝트 루트의 `AGENTS.md`를 사용한다.
+
+### Configure Claude CLI
+
+1. 저장소를 로컬에 클론한다.
+
+    ```bash
+    git clone <저장소_URL>
+    cd claude-real-estate-openapi
+    ```
+
+1. Claude CLI에 MCP 서버를 등록한다.
+
+    ```bash
+    claude mcp add -s local \
+      -e DATA_GO_KR_API_KEY=your_api_key_here \
+      real-estate -- \
+      uv run --directory /path/to/claude-real-estate-openapi \
+      python src/real_estate/mcp_server/server.py
+    ```
+
+    서비스별로 키를 분리하려면 `-e`를 추가한다.
+
+    ```bash
+    claude mcp add -s local \
+      -e DATA_GO_KR_API_KEY=... \
+      -e ODCLOUD_API_KEY=... \
+      -e ODCLOUD_SERVICE_KEY=... \
+      -e ONBID_API_KEY=... \
+      real-estate -- \
+      uv run --directory /path/to/claude-real-estate-openapi \
+      python src/real_estate/mcp_server/server.py
+    ```
+
+1. 서버 등록 상태를 확인한다.
+
+    ```bash
+    claude mcp list
+    claude mcp get real-estate
+    ```
+
 
 ### Run and Debug Locally
 

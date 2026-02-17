@@ -1,21 +1,32 @@
 ---
 name: codex
-description: "Delegate token-heavy or outsourceable tasks to OpenAI Codex CLI to reduce Claude token consumption. Use when the user asks to run, delegate, or outsource a task to Codex — or when the task is large, repetitive, or well-defined enough that Codex can handle it autonomously (e.g. writing tests, refactoring a file, running a code review, bulk edits). Triggers on: codex에게 맡겨줘, codex로 해줘, 외주화해줘, codex 실행해줘, 테스트 codex로 써줘, codex 리뷰 돌려줘."
+description: "Delegate to OpenAI Codex CLI when: (1) user explicitly requests it (codex에게 맡겨줘, codex로 해줘, 외주화해줘, codex 실행해줘, codex 리뷰 돌려줘), OR (2) the task requires autonomous repo-scale execution — writing multiple test files, file-level refactoring across many files, bulk edits (type hints, formatting, comments across a directory), or code review with a clear done condition. Do NOT delegate: design/architecture decisions, small edits (under ~20 lines), explanation-only requests, or tasks where Claude needs to reason about context first."
 ---
 
 # Codex Delegation Skill
 
-Delegate tasks to Codex CLI to save Claude tokens.
+Delegate to Codex CLI for autonomous repo-scale execution tasks.
 
 ## When to delegate to Codex
 
-- Writing test files (one or more files)
-- File-level refactoring
-- Code review (`codex review`)
-- Repetitive bulk edits (adding comments, type hints, formatting, etc.)
-- User explicitly requests "delegate to codex" / "outsource this"
+Delegate only when ALL of these hold:
 
-Skip delegation for simple 1–2 line edits or explanation requests — Claude is faster for those.
+1. **Execution task** — requires writing/modifying files, not just reasoning
+2. **Clear done condition** — can be verified (tests pass, lint clean, etc.)
+3. **Repo-scale or repetitive** — spans multiple files or involves bulk changes
+
+Examples that qualify:
+- Writing test files for multiple tools at once
+- File-level refactoring with explicit before/after spec
+- Code review (`codex review`)
+- Bulk edits: adding type hints, docstrings, or formatting across a directory
+
+## When NOT to delegate
+
+- Design or architecture decisions (Claude reasons better here)
+- Small edits under ~20 lines (delegation overhead exceeds benefit)
+- Explanation-only or analysis requests (no file writes needed)
+- Tasks requiring contextual judgment before execution
 
 ## Pre-flight check
 

@@ -1,6 +1,9 @@
 ---
 name: worklog
-description: Update worklog files by moving tasks between todo/doing/done states. Use when recording task progress, starting new work, or marking tasks complete. Requires explicit arguments: worklog [done|doing|todo] [description].
+description: >-
+  Update worklog files by moving tasks between todo/doing/done states. Use
+  when recording task progress, starting new work, or marking tasks complete.
+  Requires explicit arguments: worklog [done|doing|todo] [description].
 ---
 
 # Worklog

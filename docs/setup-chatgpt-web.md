@@ -1,75 +1,99 @@
 # Connect with ChatGPT (Web)
 
-This page describes how to connect the real estate MCP server to [ChatGPT](https://chatgpt.com) via the deep research / connector feature.
+This page describes how to connect the real estate MCP server to [ChatGPT](https://chatgpt.com) via the connector feature.
 
 > **Note:** ChatGPT's MCP connector only supports HTTP transport. The stdio mode is not available.
 
 ## Prerequisites
 
 - ChatGPT Plus / Pro / Team / Enterprise account (MCP connector feature required)
-- [uv](https://docs.astral.sh/uv/getting-started/installation/)
-- API key from [공공데이터포털](https://www.data.go.kr)
-- A publicly reachable HTTPS URL, or a tunnel tool such as [ngrok](https://ngrok.com) for local testing
+- A publicly reachable HTTPS URL
+  - Recommended: DDNS (e.g. no-ip) + router port forwarding (80/443) + Docker Caddy setup (see [setup-docker.md](setup-docker.md))
 
-## Setup
+## Server Setup
 
-1. Clone this repository locally.
+If you deployed with Docker, ensure the following are set in your `.env`:
 
-    ```bash
-    git clone <repository_url>
-    cd claude-real-estate-openapi
-    ```
+```env
+AUTH_MODE=oauth
+OAUTH_CLIENT_ID=your_client_id_here
+OAUTH_CLIENT_SECRET=your_client_secret_here
+PUBLIC_BASE_URL=https://your-domain.ddns.net
+```
 
-1. Create a `.env` file in the project root.
+Generate credentials:
 
-    ```bash
-    cp .env.example .env
-    ```
+```bash
+openssl rand -hex 16   # for OAUTH_CLIENT_ID
+openssl rand -hex 16   # for OAUTH_CLIENT_SECRET
+```
 
-    Set your API key:
+Rebuild and restart:
 
-    ```
-    DATA_GO_KR_API_KEY=your_api_key_here
-    ```
+```bash
+docker compose -f docker/docker-compose.yml up -d --build
+```
 
-1. Start the server in HTTP mode.
+## Verify Before Connecting
 
-    ```bash
-    uv run python src/real_estate/mcp_server/server.py --transport http --host 0.0.0.0 --port 8000
-    ```
+Run these three checks before adding the connector in ChatGPT.
 
-1. Expose the server over HTTPS if running locally. For example, using ngrok:
+**1. OAuth discovery**
 
-    ```bash
-    ngrok http 8000
-    ```
+```bash
+curl https://your-domain.ddns.net/.well-known/oauth-authorization-server
+```
 
-    Note the forwarding URL (e.g. `https://xxxx.ngrok-free.app`).
+Expected response:
 
-1. In ChatGPT, open **Settings → Connectors** (or the equivalent MCP integration page) and add a new connector with the URL:
+```json
+{
+  "issuer": "https://your-domain.ddns.net",
+  "token_endpoint": "https://your-domain.ddns.net/oauth/token",
+  "grant_types_supported": ["client_credentials"],
+  "token_endpoint_auth_methods_supported": ["client_secret_post"]
+}
+```
 
-    ```
-    https://xxxx.ngrok-free.app/mcp
-    ```
+**2. Token issuance**
 
-    If the server has `AUTH_MODE=oauth` enabled, ChatGPT will ask for OAuth credentials.
-    Select **OAuth** as the authentication type and enter:
+```bash
+curl -X POST https://your-domain.ddns.net/oauth/token \
+  -d "grant_type=client_credentials&client_id=YOUR_ID&client_secret=YOUR_SECRET"
+```
 
-    | Field | Value |
-    |-------|-------|
-    | OAuth Client ID | value of `OAUTH_CLIENT_ID` from `.env` |
-    | OAuth Client Secret | value of `OAUTH_CLIENT_SECRET` from `.env` |
+Expected: `{"access_token": "...", "token_type": "bearer", "expires_in": 3600}`
 
-    The token URL used internally is `https://your-domain.com/oauth/token`.
+**3. MCP access**
 
-1. Confirm the `real-estate` tools appear in the connector tool list.
+```bash
+TOKEN=<access_token from above>
+curl -X POST https://your-domain.ddns.net/mcp \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'
+```
 
-## Notes
+Expected: JSON response listing the `real-estate` tools.
 
-- The MCP endpoint path is `/mcp` (e.g. `http://127.0.0.1:8000/mcp`).
-- For production use, deploy behind a reverse proxy (nginx, Caddy, etc.) with a valid TLS certificate instead of ngrok.
-- ChatGPT does not support `AGENTS.md` or **Project Instructions** in the same way as Claude clients. Add any custom instructions directly in the ChatGPT system prompt or custom instructions settings.
+## Add the Connector in ChatGPT
+
+Once all three checks pass:
+
+1. Go to **Settings → Connectors** → **Add connector**
+2. Enter the MCP server URL:
+   ```
+   https://your-domain.ddns.net/mcp
+   ```
+3. Select **OAuth** as the authentication type and enter:
+
+   | Field | Value |
+   |-------|-------|
+   | Client ID | `OAUTH_CLIENT_ID` from `.env` |
+   | Client Secret | `OAUTH_CLIENT_SECRET` from `.env` |
+
+4. Confirm the `real-estate` tools appear in the connector tool list.
 
 ## Remove
 
-In ChatGPT, open **Settings → Connectors** and delete the `real-estate` connector entry.
+Go to **Settings → Connectors** and delete the `real-estate` connector entry.

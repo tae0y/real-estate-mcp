@@ -4,10 +4,6 @@ services:
       context: ..
       dockerfile: docker/Dockerfile.auth
     env_file: ../.env
-    environment:
-      OAUTH_CLIENT_ID: ${OAUTH_CLIENT_ID:-}
-      OAUTH_CLIENT_SECRET: ${OAUTH_CLIENT_SECRET:-}
-      OAUTH_TOKEN_TTL: ${OAUTH_TOKEN_TTL:-3600}
     networks:
       - internal
     restart: unless-stopped

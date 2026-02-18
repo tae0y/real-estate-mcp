@@ -9,7 +9,11 @@
 #   none   — no auth (default; development / trusted network use)
 
 tae0yfi.ddns.net {
-    # OAuth token endpoint — always forwarded to auth service (no auth required)
+    # OAuth discovery + token endpoints — always forwarded to auth service (no auth required)
+    handle /.well-known/* {
+        reverse_proxy auth:9000
+    }
+
     handle /oauth/* {
         reverse_proxy auth:9000
     }
@@ -21,11 +25,13 @@ tae0yfi.ddns.net {
             uri /oauth/verify
             copy_headers Authorization
         }
-        reverse_proxy /mcp* mcp:8000
+        reverse_proxy mcp:8000
     }
 
     # AUTH_MODE=none or unset — no auth
-    reverse_proxy /mcp* mcp:8000
+    handle /mcp* {
+        reverse_proxy mcp:8000
+    }
 
     header {
         -X-Accel-Buffering

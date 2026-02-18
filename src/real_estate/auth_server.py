@@ -11,6 +11,19 @@ app = FastAPI()
 # in-memory store: token → expiry epoch
 _tokens: dict[str, float] = {}
 
+_BASE_URL = os.getenv("PUBLIC_BASE_URL", "")
+
+
+@app.get("/.well-known/oauth-authorization-server")
+async def oauth_metadata() -> dict:
+    """RFC 8414 Authorization Server Metadata — required for ChatGPT MCP discovery."""
+    return {
+        "issuer": _BASE_URL,
+        "token_endpoint": f"{_BASE_URL}/oauth/token",
+        "grant_types_supported": ["client_credentials"],
+        "token_endpoint_auth_methods_supported": ["client_secret_post"],
+    }
+
 
 @app.post("/oauth/token")
 async def token(

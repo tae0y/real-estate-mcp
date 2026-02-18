@@ -1,0 +1,13 @@
+# Local development: HTTP only (no TLS)
+# For production with a domain, replace ":80" with "your-domain.com"
+# and Caddy will automatically obtain a Let's Encrypt certificate.
+
+:80 {
+    reverse_proxy /mcp* mcp:8000
+
+    # Strip idle connections quickly for SSE (MCP uses server-sent events)
+    header {
+        # Disable buffering for SSE streams
+        -X-Accel-Buffering
+    }
+}

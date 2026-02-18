@@ -1,0 +1,36 @@
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__
+*.py[oc]
+.venv
+*.egg-info
+build/
+dist/
+
+# Dev / test
+tests/
+localdocs/
+docs/
+scripts/
+.arxiv/
+
+# Config / secrets
+.env
+.env.*
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+
+# Coverage / cache
+.coverage
+.cache/
+htmlcov/
+
+# Docker (don't recurse into compose files — they're needed for reference only)

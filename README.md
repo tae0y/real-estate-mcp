@@ -87,7 +87,19 @@ For HTTP mode, other clients, or per-service API key configuration, see the docs
 | Codex CLI | stdio / HTTP | [docs/setup-codex-cli.md](docs/setup-codex-cli.md) |
 | ChatGPT (web) | HTTP only | [docs/setup-chatgpt-web.md](docs/setup-chatgpt-web.md) |
 
-## Run and Debug Locally
+## Run on Local Machine
+
+1. Get the repository root.
+
+    ```bash
+    # bash/zsh
+    REPOSITORY_ROOT=$(git rev-parse --show-toplevel)
+    ```
+
+    ```powershell
+    # PowerShell
+    $REPOSITORY_ROOT = git rev-parse --show-toplevel
+    ```
 
 1. Create a `.env` file in the project root.
 
@@ -127,6 +139,57 @@ For HTTP mode, other clients, or per-service API key configuration, see the docs
     If the window is closed or you need to reconnect, open the full URL shown after `MCP Inspector is up and running at:` in the terminal.
 
 1. Run `get_region_code` first to check `LAWD_CD`, then call tools like `get_apartment_trades` to verify everything works.
+
+## Run in Docker
+
+Packages the MCP server + Caddy reverse proxy as containers.
+Use this to serve over HTTP for ChatGPT or other remote clients.
+
+1. Get the repository root.
+
+    ```bash
+    # bash/zsh
+    REPOSITORY_ROOT=$(git rev-parse --show-toplevel)
+    ```
+
+    ```powershell
+    # PowerShell
+    $REPOSITORY_ROOT = git rev-parse --show-toplevel
+    ```
+
+1. Create a `.env` file in the project root (same as local setup above).
+
+1. Build and start the containers.
+
+    ```bash
+    # bash/zsh
+    docker compose -f $REPOSITORY_ROOT/docker/docker-compose.yml up -d --build
+    ```
+
+    ```powershell
+    # PowerShell
+    docker compose -f $REPOSITORY_ROOT/docker/docker-compose.yml up -d --build
+    ```
+
+1. Verify the MCP server is running.
+
+    ```bash
+    curl http://localhost/mcp
+    ```
+
+1. To stop the containers:
+
+    ```bash
+    # bash/zsh
+    docker compose -f $REPOSITORY_ROOT/docker/docker-compose.yml down
+    ```
+
+    ```powershell
+    # PowerShell
+    docker compose -f $REPOSITORY_ROOT/docker/docker-compose.yml down
+    ```
+
+For domain + HTTPS setup (home server deployment), see [docs/setup-docker.md](docs/setup-docker.md).
 
 ## Additional Docs
 

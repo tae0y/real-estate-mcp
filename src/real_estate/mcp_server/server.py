@@ -111,6 +111,8 @@ def main() -> None:
     args = parser.parse_args()
 
     if args.transport == "http":
+        import os
+
         import uvicorn
         from mcp.server.transport_security import TransportSecuritySettings
 
@@ -125,7 +127,7 @@ def main() -> None:
             host=args.host,
             port=args.port,
             proxy_headers=True,
-            forwarded_allow_ips="192.168.45.1",
+            forwarded_allow_ips=os.environ.get("FORWARDED_ALLOW_IPS", "127.0.0.1"),
         )
     else:
         mcp.run()

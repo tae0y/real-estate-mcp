@@ -159,7 +159,19 @@ Provides 14+ tools for querying apartment, officetel, villa, single-house, and c
     ```
 
 
-### Run and Debug Locally
+### 로컬에서 실행하기
+
+1. 저장소 루트를 변수에 저장한다.
+
+    ```bash
+    # bash/zsh
+    REPOSITORY_ROOT=$(git rev-parse --show-toplevel)
+    ```
+
+    ```powershell
+    # PowerShell
+    $REPOSITORY_ROOT = git rev-parse --show-toplevel
+    ```
 
 1. 프로젝트 루트에서 `.env` 파일을 만든다.
 
@@ -199,4 +211,55 @@ Provides 14+ tools for querying apartment, officetel, villa, single-house, and c
     창을 닫았거나 다시 접속해야 하면, 터미널의 `MCP Inspector is up and running at:` 뒤에 출력된 전체 URL로 접속한다.
     (예: `http://localhost:6274/?MCP_PROXY_AUTH_TOKEN=...`)
 
-1. `get_region_code`를 먼저 실행해서 `LAWD_CD` 법정동 코드를 조회합니다. 이어서 `get_apartment_trades` 아파트 실거래가 조회를 호출하여 원하는 연월 데이터를 조회합니다.
+1. `get_region_code`를 먼저 실행해서 `LAWD_CD` 법정동 코드를 조회한다. 이어서 `get_apartment_trades` 아파트 실거래가 조회를 호출하여 원하는 연월 데이터를 조회한다.
+
+### Docker로 실행하기
+
+MCP 서버 + Caddy 역방향 프록시를 컨테이너로 실행한다.
+ChatGPT 등 외부 클라이언트에 HTTP로 서빙할 때 사용한다.
+
+1. 저장소 루트를 변수에 저장한다.
+
+    ```bash
+    # bash/zsh
+    REPOSITORY_ROOT=$(git rev-parse --show-toplevel)
+    ```
+
+    ```powershell
+    # PowerShell
+    $REPOSITORY_ROOT = git rev-parse --show-toplevel
+    ```
+
+1. 프로젝트 루트에 `.env` 파일을 만든다 (로컬 실행 방법과 동일).
+
+1. 컨테이너를 빌드하고 실행한다.
+
+    ```bash
+    # bash/zsh
+    docker compose -f $REPOSITORY_ROOT/docker/docker-compose.yml up -d --build
+    ```
+
+    ```powershell
+    # PowerShell
+    docker compose -f $REPOSITORY_ROOT/docker/docker-compose.yml up -d --build
+    ```
+
+1. MCP 서버 동작을 확인한다.
+
+    ```bash
+    curl http://localhost/mcp
+    ```
+
+1. 컨테이너를 종료한다.
+
+    ```bash
+    # bash/zsh
+    docker compose -f $REPOSITORY_ROOT/docker/docker-compose.yml down
+    ```
+
+    ```powershell
+    # PowerShell
+    docker compose -f $REPOSITORY_ROOT/docker/docker-compose.yml down
+    ```
+
+도메인 + HTTPS 설정(홈서버 배포)은 [docs/setup-docker.md](docs/setup-docker.md)를 참고한다.

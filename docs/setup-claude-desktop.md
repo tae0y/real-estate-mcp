@@ -16,7 +16,7 @@ The server runs as a child process of Claude Desktop. No separate server process
 
     ```bash
     git clone <repository_url>
-    cd claude-real-estate-openapi
+    cd real-estate-mcp
     ```
 
 1. Open the Claude Desktop config file.
@@ -34,7 +34,7 @@ The server runs as a child process of Claude Desktop. No separate server process
           "command": "uv",
           "args": [
             "run",
-            "--directory", "/path/to/claude-real-estate-openapi",
+            "--directory", "/path/to/real-estate-mcp",
             "python", "src/real_estate/mcp_server/server.py"
           ],
           "env": {
@@ -45,7 +45,7 @@ The server runs as a child process of Claude Desktop. No separate server process
     }
     ```
 
-    Replace `/path/to/claude-real-estate-openapi` with the actual path to your cloned repository.
+    Replace `/path/to/real-estate-mcp` with the actual path to your cloned repository.
 
     If you want separate keys per service, add more entries under `env`:
 
@@ -73,7 +73,7 @@ The server runs as a standalone HTTP process. Claude Desktop connects to it over
 
     ```bash
     git clone <repository_url>
-    cd claude-real-estate-openapi
+    cd real-estate-mcp
     ```
 
 1. Create a `.env` file in the project root (the server reads it on startup).

@@ -1,7 +1,7 @@
-# Korea Real Estate OpenAPI for Claude
+# Korea Real Estate MCP
 
-MCP server exposing Korea's MOLIT (국토교통부) real estate transaction API to Claude Desktop.
-Provides 14+ tools for querying apartment, officetel, villa, single-house, and commercial trade/rent data, APT subscriptions, and public auctions.
+Claude, ChatGPT 등 AI 챗·CLI 서비스에 연동 가능한 부동산 정보 MCP 서버.
+국토교통부 실거래가 API를 노출하며, 아파트·오피스텔·빌라·단독주택·상업용 건물의 매매·전월세, 청약 공고·결과, 온비드 공매 조회를 포함한 14개 이상의 도구를 제공한다.
 
 ## Supported tools
 
@@ -43,7 +43,7 @@ Provides 14+ tools for querying apartment, officetel, villa, single-house, and c
 
     ```bash
     git clone <저장소_URL>
-    cd claude-real-estate-openapi
+    cd real-estate-mcp
     ```
 
 1. Claude Desktop 설정 파일(`claude_desktop_config.json`)을 연다.
@@ -61,7 +61,7 @@ Provides 14+ tools for querying apartment, officetel, villa, single-house, and c
           "command": "uv",
           "args": [
             "run",
-            "--directory", "/path/to/claude-real-estate-openapi",
+            "--directory", "/path/to/real-estate-mcp",
             "python", "src/real_estate/mcp_server/server.py"
           ],
           "env": {
@@ -84,7 +84,7 @@ Provides 14+ tools for querying apartment, officetel, villa, single-house, and c
 
     ```bash
     git clone <저장소_URL>
-    cd claude-real-estate-openapi
+    cd real-estate-mcp
     ```
 
 1. Codex CLI에 MCP 서버를 등록한다.
@@ -92,7 +92,7 @@ Provides 14+ tools for querying apartment, officetel, villa, single-house, and c
     ```bash
     codex mcp add real-estate \
       --env DATA_GO_KR_API_KEY=your_api_key_here \
-      -- uv run --directory /path/to/claude-real-estate-openapi \
+      -- uv run --directory /path/to/real-estate-mcp \
       python src/real_estate/mcp_server/server.py
     ```
 
@@ -104,7 +104,7 @@ Provides 14+ tools for querying apartment, officetel, villa, single-house, and c
       --env ODCLOUD_API_KEY=... \
       --env ODCLOUD_SERVICE_KEY=... \
       --env ONBID_API_KEY=... \
-      -- uv run --directory /path/to/claude-real-estate-openapi \
+      -- uv run --directory /path/to/real-estate-mcp \
       python src/real_estate/mcp_server/server.py
     ```
 
@@ -125,7 +125,7 @@ Provides 14+ tools for querying apartment, officetel, villa, single-house, and c
 
     ```bash
     git clone <저장소_URL>
-    cd claude-real-estate-openapi
+    cd real-estate-mcp
     ```
 
 1. Claude CLI에 MCP 서버를 등록한다.
@@ -134,7 +134,7 @@ Provides 14+ tools for querying apartment, officetel, villa, single-house, and c
     claude mcp add -s local \
       -e DATA_GO_KR_API_KEY=your_api_key_here \
       real-estate -- \
-      uv run --directory /path/to/claude-real-estate-openapi \
+      uv run --directory /path/to/real-estate-mcp \
       python src/real_estate/mcp_server/server.py
     ```
 
@@ -147,7 +147,7 @@ Provides 14+ tools for querying apartment, officetel, villa, single-house, and c
       -e ODCLOUD_SERVICE_KEY=... \
       -e ONBID_API_KEY=... \
       real-estate -- \
-      uv run --directory /path/to/claude-real-estate-openapi \
+      uv run --directory /path/to/real-estate-mcp \
       python src/real_estate/mcp_server/server.py
     ```
 

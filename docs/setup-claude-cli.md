@@ -16,7 +16,7 @@ The server runs as a child process of Claude CLI. No separate server process is 
 
     ```bash
     git clone <repository_url>
-    cd claude-real-estate-openapi
+    cd real-estate-mcp
     ```
 
 1. Register this MCP server in Claude CLI.
@@ -25,11 +25,11 @@ The server runs as a child process of Claude CLI. No separate server process is 
     claude mcp add -s local \
       -e DATA_GO_KR_API_KEY=your_api_key_here \
       real-estate -- \
-      uv run --directory /path/to/claude-real-estate-openapi \
+      uv run --directory /path/to/real-estate-mcp \
       python src/real_estate/mcp_server/server.py
     ```
 
-    Replace `/path/to/claude-real-estate-openapi` with the actual path to your cloned repository.
+    Replace `/path/to/real-estate-mcp` with the actual path to your cloned repository.
 
     If you want separate keys per service, add more `-e` options:
 
@@ -40,7 +40,7 @@ The server runs as a child process of Claude CLI. No separate server process is 
       -e ODCLOUD_SERVICE_KEY=... \
       -e ONBID_API_KEY=... \
       real-estate -- \
-      uv run --directory /path/to/claude-real-estate-openapi \
+      uv run --directory /path/to/real-estate-mcp \
       python src/real_estate/mcp_server/server.py
     ```
 
@@ -63,7 +63,7 @@ The server runs as a standalone HTTP process. Use this when you want to share on
 
     ```bash
     git clone <repository_url>
-    cd claude-real-estate-openapi
+    cd real-estate-mcp
     ```
 
 1. Create a `.env` file in the project root (the server reads it on startup).

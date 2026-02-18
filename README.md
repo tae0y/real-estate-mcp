@@ -1,6 +1,6 @@
-# Korea Real Estate OpenAPI for Claude
+# Korea Real Estate MCP
 
-MCP server exposing Korea's MOLIT (국토교통부) real estate transaction API to Claude Desktop.
+MCP server exposing Korea's MOLIT (국토교통부) real estate transaction API to AI chat and CLI services — Claude, ChatGPT, Codex CLI, and more.
 Provides 14+ tools for querying apartment, officetel, villa, single-house, and commercial trade/rent data, apartment subscriptions, and public auctions.
 
 ## Supported Tools
@@ -42,7 +42,7 @@ The fastest way to get started — the server runs as a child process of Claude 
 
     ```bash
     git clone <repository_url>
-    cd claude-real-estate-openapi
+    cd real-estate-mcp
     ```
 
 1. Open the Claude Desktop config file.
@@ -60,7 +60,7 @@ The fastest way to get started — the server runs as a child process of Claude 
           "command": "uv",
           "args": [
             "run",
-            "--directory", "/path/to/claude-real-estate-openapi",
+            "--directory", "/path/to/real-estate-mcp",
             "python", "src/real_estate/mcp_server/server.py"
           ],
           "env": {

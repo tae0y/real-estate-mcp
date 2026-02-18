@@ -18,6 +18,7 @@ app = FastAPI()
 # in-memory store: token → expiry epoch (legacy client_credentials)
 _tokens: dict[str, float] = {}
 
+
 def _base_url() -> str:
     return os.getenv("PUBLIC_BASE_URL", "")
 
@@ -28,7 +29,6 @@ def _auth0_domain() -> str:
 
 def _auth0_audience() -> str:
     return os.getenv("AUTH0_AUDIENCE", "")
-
 
 
 async def _verify_auth0_token(tok: str) -> bool:
@@ -78,7 +78,10 @@ async def token(
 ) -> dict:
     if grant_type != "client_credentials":
         raise HTTPException(status_code=400, detail="unsupported_grant_type")
-    if client_id != os.environ["OAUTH_CLIENT_ID"] or client_secret != os.environ["OAUTH_CLIENT_SECRET"]:
+    if (
+        client_id != os.environ["OAUTH_CLIENT_ID"]
+        or client_secret != os.environ["OAUTH_CLIENT_SECRET"]
+    ):
         raise HTTPException(status_code=401, detail="invalid_client")
     tok = secrets.token_hex(32)
     expires_in = int(os.getenv("OAUTH_TOKEN_TTL", "3600"))

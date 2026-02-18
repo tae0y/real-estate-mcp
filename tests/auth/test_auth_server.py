@@ -145,7 +145,7 @@ class TestProtectedResourceMetadata:
         resp = client.get("/.well-known/oauth-protected-resource")
         assert resp.status_code == 200
         body = resp.json()
-        assert body["resource"] == f"https://example.com/mcp"
+        assert body["resource"] == "https://example.com/mcp"
         assert f"https://{_TEST_DOMAIN}" in body["authorization_servers"]
 
     def test_returns_scopes_supported(self, client: TestClient) -> None:
@@ -170,9 +170,11 @@ class TestVerifyJWT:
 
         # Patch _get_jwks to return public key directly (bypasses HTTP call)
         from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
+
         pub_pem = public_key.public_bytes(Encoding.PEM, PublicFormat.SubjectPublicKeyInfo).decode()
 
         import real_estate.auth_server as auth_mod
+
         async def fake_get_jwks():
             return pub_pem  # python-jose accepts PEM string
 
@@ -190,9 +192,11 @@ class TestVerifyJWT:
         private_pem, public_key = rsa_key_pair
 
         from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
+
         pub_pem = public_key.public_bytes(Encoding.PEM, PublicFormat.SubjectPublicKeyInfo).decode()
 
         import real_estate.auth_server as auth_mod
+
         async def fake_get_jwks():
             return pub_pem
 

@@ -1,0 +1,16 @@
+FROM python:3.12-slim
+
+RUN pip install --no-cache-dir fastapi uvicorn[standard]
+
+WORKDIR /app
+
+RUN groupadd -r appgroup && useradd -r -g appgroup -u 1000 appuser
+
+COPY src/real_estate/auth_server.py .
+
+RUN chown -R appuser:appgroup /app
+USER appuser
+
+EXPOSE 9000
+
+CMD ["uvicorn", "auth_server:app", "--host", "0.0.0.0", "--port", "9000"]

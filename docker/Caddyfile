@@ -4,14 +4,27 @@
 #
 # For local development (no TLS), replace the domain with ":80".
 #
-# Bearer token auth: set MCP_ACCESS_TOKEN in .env to enable.
-# If the variable is empty or unset, all requests are allowed through (development mode).
-# To revoke access: remove MCP_ACCESS_TOKEN from .env and restart with `docker compose up -d`.
+# Auth modes (set AUTH_MODE in .env):
+#   oauth  — client_credentials flow via auth service; Claude/ChatGPT OAuth inputs
+#   none   — no auth (default; development / trusted network use)
 
 tae0yfi.ddns.net {
-    @unauthorized expression `{env.MCP_ACCESS_TOKEN} != "" && {http.request.header.Authorization} != "Bearer {env.MCP_ACCESS_TOKEN}"`
-    respond @unauthorized "Unauthorized" 401
+    # OAuth token endpoint — always forwarded to auth service (no auth required)
+    handle /oauth/* {
+        reverse_proxy auth:9000
+    }
 
+    # MCP endpoint — guarded when AUTH_MODE=oauth
+    @oauth_mode expression `{env.AUTH_MODE} == "oauth"`
+    handle @oauth_mode {
+        forward_auth auth:9000 {
+            uri /oauth/verify
+            copy_headers Authorization
+        }
+        reverse_proxy /mcp* mcp:8000
+    }
+
+    # AUTH_MODE=none or unset — no auth
     reverse_proxy /mcp* mcp:8000
 
     header {

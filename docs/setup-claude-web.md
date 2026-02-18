@@ -52,6 +52,16 @@ This page describes how to connect the real estate MCP server to [Claude.ai](htt
     https://xxxx.ngrok-free.app/mcp
     ```
 
+    If the server has `AUTH_MODE=oauth` enabled, Claude.ai will ask for OAuth credentials.
+    Select **OAuth** as the authentication type and enter:
+
+    | Field | Value |
+    |-------|-------|
+    | OAuth Client ID | value of `OAUTH_CLIENT_ID` from `.env` |
+    | OAuth Client Secret | value of `OAUTH_CLIENT_SECRET` from `.env` |
+
+    The token URL used internally is `https://your-domain.com/oauth/token`.
+
 1. Confirm the `real-estate` tools appear in the integration tool list.
 
 1. For better responses, create a **Project** in Claude.ai and paste [prompt.custom-instructions-ko.md](prompt.custom-instructions-ko.md) into the **Project Instructions** tab.

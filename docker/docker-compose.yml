@@ -1,4 +1,17 @@
 services:
+  auth:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.auth
+    env_file: ../.env
+    environment:
+      OAUTH_CLIENT_ID: ${OAUTH_CLIENT_ID:-}
+      OAUTH_CLIENT_SECRET: ${OAUTH_CLIENT_SECRET:-}
+      OAUTH_TOKEN_TTL: ${OAUTH_TOKEN_TTL:-3600}
+    networks:
+      - internal
+    restart: unless-stopped
+
   mcp:
     build:
       context: ..
@@ -27,9 +40,8 @@ services:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro  # relative to docker/
       - caddy_data:/data
       - caddy_config:/config
-    env_file: ../.env
     environment:
-      MCP_ACCESS_TOKEN: ${MCP_ACCESS_TOKEN:-}
+      AUTH_MODE: ${AUTH_MODE:-none}
     networks:
       - internal
     depends_on:

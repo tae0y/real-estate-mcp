@@ -52,6 +52,16 @@ This page describes how to connect the real estate MCP server to [ChatGPT](https
     https://xxxx.ngrok-free.app/mcp
     ```
 
+    If the server has `AUTH_MODE=oauth` enabled, ChatGPT will ask for OAuth credentials.
+    Select **OAuth** as the authentication type and enter:
+
+    | Field | Value |
+    |-------|-------|
+    | OAuth Client ID | value of `OAUTH_CLIENT_ID` from `.env` |
+    | OAuth Client Secret | value of `OAUTH_CLIENT_SECRET` from `.env` |
+
+    The token URL used internally is `https://your-domain.com/oauth/token`.
+
 1. Confirm the `real-estate` tools appear in the connector tool list.
 
 ## Notes

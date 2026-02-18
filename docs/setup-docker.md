@@ -180,11 +180,57 @@ docker compose -f $REPOSITORY_ROOT/docker/docker-compose.yml logs -f caddy
 
 | Service | Image | Port | Role |
 |---------|-------|------|------|
+| `auth` | local build | 9000 (internal only) | OAuth token server |
 | `mcp` | local build | 8000 (internal only) | MCP HTTP server |
 | `caddy` | caddy:2-alpine | 80, 443 | Reverse proxy |
 
-The `mcp` container is not exposed directly on any host port.
-All traffic reaches it through Caddy.
+The `auth` and `mcp` containers are not exposed directly on any host port.
+All traffic reaches them through Caddy.
+
+## Authentication
+
+Set `AUTH_MODE` in `.env` to control access:
+
+| `AUTH_MODE` | Behaviour | When to use |
+|-------------|-----------|-------------|
+| `none` (default) | No authentication | Development, local trusted network |
+| `oauth` | OAuth 2.0 `client_credentials` | Claude Web, ChatGPT Web, shared access |
+
+### Enable OAuth (AUTH_MODE=oauth)
+
+1. Add to `.env`:
+
+    ```
+    AUTH_MODE=oauth
+    OAUTH_CLIENT_ID=<generate with: openssl rand -hex 16>
+    OAUTH_CLIENT_SECRET=<generate with: openssl rand -hex 32>
+    ```
+
+1. Restart the containers:
+
+    ```bash
+    docker compose -f $REPOSITORY_ROOT/docker/docker-compose.yml up -d
+    ```
+
+1. Share `OAUTH_CLIENT_ID` and `OAUTH_CLIENT_SECRET` with colleagues.
+   They enter these into the **OAuth Client ID** / **OAuth Client Secret** fields in Claude Web or ChatGPT Web.
+
+1. To revoke access: remove `OAUTH_CLIENT_ID` and `OAUTH_CLIENT_SECRET` from `.env` (or change the values), then restart.
+
+### OAuth token endpoint
+
+```
+POST https://your-domain.com/oauth/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=client_credentials&client_id=<id>&client_secret=<secret>
+```
+
+Response:
+
+```json
+{"access_token": "...", "token_type": "bearer", "expires_in": 3600}
+```
 
 ## Environment variables
 
@@ -195,3 +241,7 @@ All traffic reaches it through Caddy.
 | `ODCLOUD_API_KEY` | falls back to `DATA_GO_KR_API_KEY` | Applyhome Authorization header |
 | `ODCLOUD_SERVICE_KEY` | falls back to `DATA_GO_KR_API_KEY` | Applyhome query param |
 | `FORWARDED_ALLOW_IPS` | `127.0.0.1` | Trusted proxy IPs (set to `caddy` in docker-compose) |
+| `AUTH_MODE` | `none` | Auth mode: `oauth` or `none` |
+| `OAUTH_CLIENT_ID` | — | OAuth client ID (required when `AUTH_MODE=oauth`) |
+| `OAUTH_CLIENT_SECRET` | — | OAuth client secret (required when `AUTH_MODE=oauth`) |
+| `OAUTH_TOKEN_TTL` | `3600` | Access token lifetime in seconds |

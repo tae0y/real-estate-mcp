@@ -36,8 +36,7 @@ services:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro  # relative to docker/
       - caddy_data:/data
       - caddy_config:/config
-    environment:
-      AUTH_MODE: ${AUTH_MODE:-none}
+    env_file: ../.env
     networks:
       - internal
     depends_on:

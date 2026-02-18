@@ -2,7 +2,8 @@
 
 Supports two token types:
 - client_credentials (legacy hex token) — Claude Web/Desktop
-- Auth0 JWT (RS256) — ChatGPT Web via authorization_code + PKCE
+- Auth0 token (JWE or JWT) — ChatGPT Web via authorization_code + PKCE
+  Verified via Auth0 token introspection endpoint.
 """
 
 import os
@@ -11,7 +12,6 @@ import time
 
 import httpx
 from fastapi import FastAPI, Form, HTTPException, Request
-from jose import JWTError, jwt
 
 app = FastAPI()
 
@@ -30,11 +30,15 @@ def _auth0_audience() -> str:
     return os.getenv("AUTH0_AUDIENCE", "")
 
 
-async def _get_jwks() -> dict:
+
+async def _verify_auth0_token(tok: str) -> bool:
+    """Verify Auth0 token via userinfo endpoint. Returns True if valid."""
     async with httpx.AsyncClient() as client:
-        r = await client.get(f"https://{_auth0_domain()}/.well-known/jwks.json")
-        r.raise_for_status()
-        return r.json()
+        r = await client.get(
+            f"https://{_auth0_domain()}/userinfo",
+            headers={"Authorization": f"Bearer {tok}"},
+        )
+        return r.status_code == 200
 
 
 @app.get("/.well-known/oauth-protected-resource")
@@ -89,18 +93,9 @@ async def verify(request: Request) -> dict:
         raise HTTPException(status_code=401, detail="missing_token")
     tok = auth.removeprefix("Bearer ")
 
-    # JWT (Auth0): three dot-separated segments
-    if tok.count(".") == 2:
-        try:
-            jwks = await _get_jwks()
-            jwt.decode(
-                tok,
-                jwks,
-                algorithms=["RS256"],
-                audience=_auth0_audience(),
-                issuer=f"https://{_auth0_domain()}/",
-            )
-        except (JWTError, Exception):
+    if "." in tok:
+        # Auth0 token (JWS or JWE) — verify via userinfo endpoint
+        if not await _verify_auth0_token(tok):
             raise HTTPException(status_code=401, detail="invalid_token")
     else:
         # Legacy client_credentials hex token

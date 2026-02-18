@@ -19,11 +19,14 @@ tae0yfi.ddns.net {
     }
 
     # MCP endpoint — guarded when AUTH_MODE=oauth
-    @oauth_mode expression `{env.AUTH_MODE} == "oauth"`
+    @oauth_mode {
+        path /mcp*
+        expression `{env.AUTH_MODE} == "oauth"`
+    }
     handle @oauth_mode {
         forward_auth auth:9000 {
             uri /oauth/verify
-            copy_headers Authorization
+            header_up Authorization {http.request.header.Authorization}
         }
         reverse_proxy mcp:8000
     }

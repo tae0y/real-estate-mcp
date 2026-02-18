@@ -2,10 +2,10 @@
 
 [English](README.md) | [한국어](README-ko.md)
 
-Ask Claude about Korean apartment prices — powered by MOLIT's open API.
-국토교통부 실거래가 API를 노출하며, 아파트·오피스텔·빌라·단독주택·상업용 건물의 매매·전월세, 청약 공고·결과, 온비드 공매 조회를 포함한 14개 이상의 도구를 제공한다.
+국토교통부 공공데이터 API를 기반으로 Claude에게 한국 부동산 실거래가를 질문할 수 있는 MCP 서버입니다.
+국토교통부 실거래가 API를 MCP 서버로 제공하며, 아파트·오피스텔·빌라·단독주택·상업용 건물의 매매·전월세, 청약 공고·결과, 온비드 공매 조회를 포함한 14개 이상의 도구를 제공합니다.
 
-## Supported tools
+## Supported Tools
 
 - [x] 아파트 매매 / 전월세 (`get_apartment_trades`, `get_apartment_rent`)
 - [x] 오피스텔 매매 / 전월세 (`get_officetel_trades`, `get_officetel_rent`)
@@ -21,7 +21,7 @@ Ask Claude about Korean apartment prices — powered by MOLIT's open API.
 ## Prerequisites
 
 - [uv](https://docs.astral.sh/uv/getting-started/installation/)
-- [공공데이터포털 API 키](https://www.data.go.kr) (아래 서비스 신청)
+- [공공데이터포털 API 키](https://www.data.go.kr) — 아래 서비스를 신청하세요.
   - 국토교통부\_아파트 매매 실거래가 자료
   - 국토교통부\_아파트 전월세 자료
   - 국토교통부\_오피스텔 매매 신고 자료
@@ -36,26 +36,26 @@ Ask Claude about Korean apartment prices — powered by MOLIT's open API.
   - 한국자산관리공사\_온비드 코드 조회서비스
   - 청약홈 APT 공고 (ApplyhomeInfoSvc, ApplyhomeStatSvc)
 
-> hwp, docx 포맷 API 명세서 처리시 다음 문서 참고: [Common Utils Guide](docs/guide-common-utils.md)
+> hwp, docx 포맷 API 명세서 처리 시 다음 문서를 참고하세요: [Common Utils Guide](docs/guide-common-utils.md)
 
 ## Quick Start: Claude Desktop (stdio)
 
-가장 빠른 시작 방법 — 서버가 Claude Desktop의 자식 프로세스로 실행된다.
+가장 빠른 시작 방법입니다 — 서버가 Claude Desktop 하위 프로세스로 동작합니다.
 
-1. 저장소를 로컬에 클론한다.
+1. 저장소를 클론하세요.
 
     ```bash
-    git clone <저장소_URL>
+    git clone <repository_url>
     cd real-estate-mcp
     ```
 
-1. Claude Desktop 설정 파일을 연다.
+1. Claude Desktop 설정 파일을 여세요.
 
     ```bash
     open "$HOME/Library/Application Support/Claude/claude_desktop_config.json"
     ```
 
-1. `mcpServers`에 아래 항목을 추가한다.
+1. `mcpServers`에 아래 항목을 추가하세요.
 
     ```json
     {
@@ -75,13 +75,13 @@ Ask Claude about Korean apartment prices — powered by MOLIT's open API.
     }
     ```
 
-1. Claude Desktop을 재시작한다. 도구 목록에 `real-estate` 서버가 표시되면 완료.
+1. Claude Desktop을 재시작하세요. 도구 목록에 `real-estate` 서버가 표시되면 완료입니다.
 
-1. 더 정확한 응답을 위해 Claude Desktop에서 **Project**를 만들고, [resources/custom-instructions-ko.md](resources/custom-instructions-ko.md) 내용을 **Project Instructions** 탭에 붙여넣는다.
+1. 더 정확한 응답을 위해 Claude Desktop에서 **Project**를 생성하고, [resources/custom-instructions-ko.md](resources/custom-instructions-ko.md) 내용을 **Project Instructions** 탭에 붙여넣으세요.
 
-HTTP 모드, 다른 클라이언트, 서비스별 API 키 설정은 아래 문서를 참고한다.
+## Connect with Other Clients
 
-## 다른 클라이언트 연결
+HTTP 모드, 다른 클라이언트, 서비스별 API 키 설정은 아래 문서를 참고하세요.
 
 | 클라이언트 | 전송 방식 | 가이드 |
 |-----------|----------|--------|
@@ -90,235 +90,5 @@ HTTP 모드, 다른 클라이언트, 서비스별 API 키 설정은 아래 문�
 | Claude CLI | stdio / HTTP | [docs/setup-claude-cli.md](docs/setup-claude-cli.md) |
 | Codex CLI | stdio / HTTP | [docs/setup-codex-cli.md](docs/setup-codex-cli.md) |
 | ChatGPT (웹) | HTTP only | [docs/setup-chatgpt-web.md](docs/setup-chatgpt-web.md) |
-
-## Getting started
-
-### Configure Claude Desktop
-
-1. 저장소를 로컬에 클론한다.
-
-    ```bash
-    git clone <저장소_URL>
-    cd real-estate-mcp
-    ```
-
-1. Claude Desktop 설정 파일(`claude_desktop_config.json`)을 연다.
-
-    ```bash
-    open "$HOME/Library/Application Support/Claude/claude_desktop_config.json"
-    ```
-
-1. `mcpServers`에 아래 항목을 추가한다. 이미 다른 서버가 등록되어 있다면 `mcpServers` 객체 안에 `real-estate` 항목만 추가한다.
-
-    ```json
-    {
-      "mcpServers": {
-        "real-estate": {
-          "command": "uv",
-          "args": [
-            "run",
-            "--directory", "/path/to/real-estate-mcp",
-            "python", "src/real_estate/mcp_server/server.py"
-          ],
-          "env": {
-            "DATA_GO_KR_API_KEY": "your_api_key_here"
-          }
-        }
-      }
-    }
-    ```
-
-1. Claude Desktop을 재시작한다. 도구 목록에 `real-estate` 서버가 표시되면 설정이 완료된 것이다.
-
-1. 더 정확한 응답을 위해 Claude Desktop에서 **Project**를 만들고, [resources/custom-instructions-ko.md](resources/custom-instructions-ko.md) 내용을 **Project Instructions** 탭에 붙여넣는다.
-
-   > 파일을 채팅 입력란이 아니라 **Project Instructions** 탭에 넣어야한다.
-
-### Configure Codex CLI
-
-1. 저장소를 로컬에 클론한다.
-
-    ```bash
-    git clone <저장소_URL>
-    cd real-estate-mcp
-    ```
-
-1. Codex CLI에 MCP 서버를 등록한다.
-
-    ```bash
-    codex mcp add real-estate \
-      --env DATA_GO_KR_API_KEY=your_api_key_here \
-      -- uv run --directory /path/to/real-estate-mcp \
-      python src/real_estate/mcp_server/server.py
-    ```
-
-    서비스별로 키를 분리하려면 `--env`를 추가한다.
-
-    ```bash
-    codex mcp add real-estate \
-      --env DATA_GO_KR_API_KEY=... \
-      --env ODCLOUD_API_KEY=... \
-      --env ODCLOUD_SERVICE_KEY=... \
-      --env ONBID_API_KEY=... \
-      -- uv run --directory /path/to/real-estate-mcp \
-      python src/real_estate/mcp_server/server.py
-    ```
-
-1. 서버 등록 상태를 확인한다.
-
-    ```bash
-    codex mcp list
-    codex mcp get real-estate
-    ```
-
-1. Codex CLI에서 더 정확한 응답을 위해 프로젝트 루트에 `AGENTS.md`를 만들고, [resources/custom-instructions-ko.md](resources/custom-instructions-ko.md) 내용을 붙여넣는다.
-
-   > Codex CLI에서는 Claude Desktop의 **Project Instructions** 탭 대신 프로젝트 루트의 `AGENTS.md`를 사용한다.
-
-### Configure Claude CLI
-
-1. 저장소를 로컬에 클론한다.
-
-    ```bash
-    git clone <저장소_URL>
-    cd real-estate-mcp
-    ```
-
-1. Claude CLI에 MCP 서버를 등록한다.
-
-    ```bash
-    claude mcp add -s local \
-      -e DATA_GO_KR_API_KEY=your_api_key_here \
-      real-estate -- \
-      uv run --directory /path/to/real-estate-mcp \
-      python src/real_estate/mcp_server/server.py
-    ```
-
-    서비스별로 키를 분리하려면 `-e`를 추가한다.
-
-    ```bash
-    claude mcp add -s local \
-      -e DATA_GO_KR_API_KEY=... \
-      -e ODCLOUD_API_KEY=... \
-      -e ODCLOUD_SERVICE_KEY=... \
-      -e ONBID_API_KEY=... \
-      real-estate -- \
-      uv run --directory /path/to/real-estate-mcp \
-      python src/real_estate/mcp_server/server.py
-    ```
-
-1. 서버 등록 상태를 확인한다.
-
-    ```bash
-    claude mcp list
-    claude mcp get real-estate
-    ```
-
-
-### 로컬에서 실행하기
-
-1. 저장소 루트를 변수에 저장한다.
-
-    ```bash
-    # bash/zsh
-    REPOSITORY_ROOT=$(git rev-parse --show-toplevel)
-    ```
-
-    ```powershell
-    # PowerShell
-    $REPOSITORY_ROOT = git rev-parse --show-toplevel
-    ```
-
-1. 프로젝트 루트에서 `.env` 파일을 만든다.
-
-    ```bash
-    cp .env.example .env
-    ```
-
-    내부에 API Key를 설정한다.
-
-    ```
-    DATA_GO_KR_API_KEY=your_api_key_here
-    ```
-
-    `DATA_GO_KR_API_KEY`는 기본적으로 Applyhome(odcloud), Onbid(B010003)에도 함께 사용된다.
-    서비스별로 다른 키를 쓰려면 아래 값을 추가로 설정한다.
-
-    ```
-    ODCLOUD_API_KEY=...        # Applyhome Authorization 헤더용
-    ODCLOUD_SERVICE_KEY=...    # Applyhome query param용
-    ONBID_API_KEY=...          # Onbid용
-    ```
-
-1. 이미 Inspector가 실행 중이라면 먼저 종료한다.
-
-    ```bash
-    PID=$(lsof -ti :6274)
-    [ -n "$PID" ] && kill $PID
-    ```
-
-1. MCP Inspector를 실행한다.
-
-    ```bash
-    uv run mcp dev src/real_estate/mcp_server/server.py
-    ```
-
-    실행하면 브라우저가 자동으로 열린다.
-    창을 닫았거나 다시 접속해야 하면, 터미널의 `MCP Inspector is up and running at:` 뒤에 출력된 전체 URL로 접속한다.
-    (예: `http://localhost:6274/?MCP_PROXY_AUTH_TOKEN=...`)
-
-1. `get_region_code`를 먼저 실행해서 `LAWD_CD` 법정동 코드를 조회한다. 이어서 `get_apartment_trades` 아파트 실거래가 조회를 호출하여 원하는 연월 데이터를 조회한다.
-
-### Docker로 실행하기
-
-MCP 서버 + Caddy 역방향 프록시를 컨테이너로 실행한다.
-ChatGPT 등 외부 클라이언트에 HTTP로 서빙할 때 사용한다.
-
-1. 저장소 루트를 변수에 저장한다.
-
-    ```bash
-    # bash/zsh
-    REPOSITORY_ROOT=$(git rev-parse --show-toplevel)
-    ```
-
-    ```powershell
-    # PowerShell
-    $REPOSITORY_ROOT = git rev-parse --show-toplevel
-    ```
-
-1. 프로젝트 루트에 `.env` 파일을 만든다 (로컬 실행 방법과 동일).
-
-1. 컨테이너를 빌드하고 실행한다.
-
-    ```bash
-    # bash/zsh
-    docker compose -f $REPOSITORY_ROOT/docker/docker-compose.yml up -d --build
-    ```
-
-    ```powershell
-    # PowerShell
-    docker compose -f $REPOSITORY_ROOT/docker/docker-compose.yml up -d --build
-    ```
-
-1. MCP 서버 동작을 확인한다.
-
-    ```bash
-    curl -s -X POST http://localhost/mcp \
-      -H "Content-Type: application/json" \
-      -H "Accept: application/json, text/event-stream" \
-      -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"test","version":"0.1"}}}'
-    ```
-
-1. 컨테이너를 종료한다.
-
-    ```bash
-    # bash/zsh
-    docker compose -f $REPOSITORY_ROOT/docker/docker-compose.yml down
-    ```
-
-    ```powershell
-    # PowerShell
-    docker compose -f $REPOSITORY_ROOT/docker/docker-compose.yml down
-    ```
-
-도메인 + HTTPS 설정(홈서버 배포)은 [docs/setup-docker.md](docs/setup-docker.md)를 참고한다.
+| Docker (HTTP + Caddy) | HTTP | [docs/setup-docker.md](docs/setup-docker.md) |
+| OAuth (공개 접근) | — | [docs/setup-oauth.md](docs/setup-oauth.md) |

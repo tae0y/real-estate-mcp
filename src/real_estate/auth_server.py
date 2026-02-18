@@ -1,26 +1,67 @@
-"""Minimal OAuth 2.0 client_credentials token server for MCP HTTP access."""
+"""Minimal OAuth 2.0 token server for MCP HTTP access.
+
+Supports two token types:
+- client_credentials (legacy hex token) — Claude Web/Desktop
+- Auth0 JWT (RS256) — ChatGPT Web via authorization_code + PKCE
+"""
 
 import os
 import secrets
 import time
 
+import httpx
 from fastapi import FastAPI, Form, HTTPException, Request
+from jose import JWTError, jwt
 
 app = FastAPI()
 
-# in-memory store: token → expiry epoch
+# in-memory store: token → expiry epoch (legacy client_credentials)
 _tokens: dict[str, float] = {}
 
-_BASE_URL = os.getenv("PUBLIC_BASE_URL", "")
+def _base_url() -> str:
+    return os.getenv("PUBLIC_BASE_URL", "")
+
+
+def _auth0_domain() -> str:
+    return os.getenv("AUTH0_DOMAIN", "")
+
+
+def _auth0_audience() -> str:
+    return os.getenv("AUTH0_AUDIENCE", "")
+
+
+async def _get_jwks() -> dict:
+    async with httpx.AsyncClient() as client:
+        r = await client.get(f"https://{_auth0_domain()}/.well-known/jwks.json")
+        r.raise_for_status()
+        return r.json()
+
+
+@app.get("/.well-known/oauth-protected-resource")
+async def protected_resource_metadata() -> dict:
+    """RFC 9728 — MCP resource server metadata. ChatGPT reads this first."""
+    base = _base_url()
+    domain = _auth0_domain()
+    return {
+        "resource": f"{base}/mcp",
+        "authorization_servers": [f"https://{domain}"],
+        "scopes_supported": [],
+        "resource_documentation": base,
+    }
 
 
 @app.get("/.well-known/oauth-authorization-server")
 async def oauth_metadata() -> dict:
-    """RFC 8414 Authorization Server Metadata — required for ChatGPT MCP discovery."""
+    """RFC 8414 Authorization Server Metadata."""
+    base = _base_url()
+    domain = _auth0_domain()
     return {
-        "issuer": _BASE_URL,
-        "token_endpoint": f"{_BASE_URL}/oauth/token",
-        "grant_types_supported": ["client_credentials"],
+        "issuer": base,
+        "authorization_endpoint": f"https://{domain}/authorize",
+        "token_endpoint": f"https://{domain}/oauth/token",
+        "registration_endpoint": f"https://{domain}/oidc/register",
+        "grant_types_supported": ["authorization_code", "client_credentials"],
+        "code_challenge_methods_supported": ["S256"],
         "token_endpoint_auth_methods_supported": ["client_secret_post"],
     }
 
@@ -47,7 +88,24 @@ async def verify(request: Request) -> dict:
     if not auth.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="missing_token")
     tok = auth.removeprefix("Bearer ")
-    if _tokens.get(tok, 0) < time.time():
-        _tokens.pop(tok, None)
-        raise HTTPException(status_code=401, detail="invalid_token")
+
+    # JWT (Auth0): three dot-separated segments
+    if tok.count(".") == 2:
+        try:
+            jwks = await _get_jwks()
+            jwt.decode(
+                tok,
+                jwks,
+                algorithms=["RS256"],
+                audience=_auth0_audience(),
+                issuer=f"https://{_auth0_domain()}/",
+            )
+        except (JWTError, Exception):
+            raise HTTPException(status_code=401, detail="invalid_token")
+    else:
+        # Legacy client_credentials hex token
+        if _tokens.get(tok, 0) < time.time():
+            _tokens.pop(tok, None)
+            raise HTTPException(status_code=401, detail="invalid_token")
+
     return {}

@@ -22,19 +22,20 @@ Provides 14+ tools for querying apartment, officetel, villa, single-house, and c
 
 - [uv](https://docs.astral.sh/uv/getting-started/installation/)
 - API key from [공공데이터포털](https://www.data.go.kr) — apply for the services below:
-  - 국토교통부_아파트 매매 실거래가 자료
-  - 국토교통부_아파트 전월세 자료
-  - 국토교통부_오피스텔 매매 신고 자료
-  - 국토교통부_오피스텔 전월세 자료
-  - 국토교통부_연립다세대 매매 실거래가 자료
-  - 국토교통부_연립다세대 전월세 실거래가 자료
-  - 국토교통부_단독/다가구 매매 실거래가 자료
-  - 국토교통부_단독/다가구 전월세 자료
-  - 국토교통부_상업용건물(오피스) 매매 신고 자료
-  - 한국자산관리공사_온비드 캠코공매물건 조회서비스
-  - 한국자산관리공사_온비드 이용기관 공매물건 조회서비스
-  - 한국자산관리공사_온비드 코드 조회서비스
-  - 청약홈 APT 공고 (ApplyhomeInfoSvc, ApplyhomeStatSvc)
+  - [국토교통부\_아파트 매매 실거래가 자료](https://www.data.go.kr/data/15126469/openapi.do)
+  - [국토교통부\_아파트 전월세 자료](https://www.data.go.kr/data/15126474/openapi.do)
+  - [국토교통부\_오피스텔 매매 신고 자료](https://www.data.go.kr/data/15126464/openapi.do)
+  - [국토교통부\_오피스텔 전월세 자료](https://www.data.go.kr/data/15126475/openapi.do)
+  - [국토교통부\_연립다세대 매매 실거래가 자료](https://www.data.go.kr/data/15126467/openapi.do)
+  - [국토교통부\_연립다세대 전월세 실거래가 자료](https://www.data.go.kr/data/15126473/openapi.do)
+  - [국토교통부\_단독/다가구 매매 실거래가 자료](https://www.data.go.kr/data/15126465/openapi.do)
+  - [국토교통부\_단독/다가구 전월세 자료](https://www.data.go.kr/data/15126472/openapi.do)
+  - [국토교통부\_상업업무용 부동산 매매 신고 자료](https://www.data.go.kr/data/15126463/openapi.do)
+  - [한국자산관리공사\_온비드 캠코공매물건 조회서비스](https://www.data.go.kr/data/15000851/openapi.do)
+  - [한국자산관리공사\_온비드 이용기관 공매물건 조회서비스](https://www.data.go.kr/data/15000849/openapi.do)
+  - [한국자산관리공사\_온비드 코드 조회서비스](https://www.data.go.kr/data/15000920/openapi.do)
+  - [한국부동산원_청약홈_APT 분양정보](https://www.data.go.kr/data/15101046/fileData.do)
+  - [한국부동산원_청약홈 청약 신청·당첨자 정보 조회 서비스](https://www.data.go.kr/data/15110812/openapi.do)
 
 > For parsing API specs in hwp or docx format, see [Common Utils Guide](docs/guide-common-utils.md)
 

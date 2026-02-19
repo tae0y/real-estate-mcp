@@ -1,3 +1,5 @@
+name: real-estate-mcp
+
 services:
   auth:
     build:

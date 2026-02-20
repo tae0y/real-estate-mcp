@@ -13,7 +13,7 @@
 - [x] 단독·다가구 매매 / 전월세 (`get_single_house_trades`, `get_single_house_rent`)
 - [x] 상업용 건물 매매 (`get_commercial_trade`)
 - [x] 아파트 청약 공고 / 결과 (`get_apt_subscription_info`, `get_apt_subscription_results`)
-- [x] 온비드 공매 입찰결과 (`get_public_auction_items`)
+- [ ] 온비드 공매 입찰결과 (`get_public_auction_items`)
 - [x] 온비드 물건 조회 (`get_onbid_thing_info_list`)
 - [x] 온비드 코드·주소 조회 (`get_onbid_*_code_info`, `get_onbid_addr*_info`)
 - [x] 지역코드 조회 (`get_region_code`)
@@ -31,8 +31,9 @@
   - [국토교통부\_단독/다가구 매매 실거래가 자료](https://www.data.go.kr/data/15126465/openapi.do)
   - [국토교통부\_단독/다가구 전월세 자료](https://www.data.go.kr/data/15126472/openapi.do)
   - [국토교통부\_상업업무용 부동산 매매 신고 자료](https://www.data.go.kr/data/15126463/openapi.do)
-  - [한국자산관리공사\_온비드 캠코공매물건 조회서비스](https://www.data.go.kr/data/15000851/openapi.do)
-  - [한국자산관리공사\_온비드 이용기관 공매물건 조회서비스](https://www.data.go.kr/data/15000849/openapi.do)
+  - 한국자산관리공사\_온비드 물건 정보 조회서비스 / ⚠️ 준비중
+  - 한국자산관리공사\_차세대 온비드 물건 입찰결과목록 조회서비스 / ⚠️ 준비중
+  - 한국자산관리공사\_차세대 온비드 물건 입찰결과상세 조회서비스 / ⚠️ 준비중
   - [한국자산관리공사\_온비드 코드 조회서비스](https://www.data.go.kr/data/15000920/openapi.do)
   - [한국부동산원_청약홈_APT 분양정보](https://www.data.go.kr/data/15101046/fileData.do)
   - [한국부동산원_청약홈 청약 신청·당첨자 정보 조회 서비스](https://www.data.go.kr/data/15110812/openapi.do)

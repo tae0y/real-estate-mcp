@@ -8,7 +8,7 @@
 #   oauth  — client_credentials flow via auth service; Claude/ChatGPT OAuth inputs
 #   none   — no auth (default; development / trusted network use)
 
-tae0yfi.ddns.net {
+your-domain.ddns.net {
     # OAuth discovery + token endpoints — always forwarded to auth service (no auth required)
     handle /.well-known/* {
         reverse_proxy auth:9000

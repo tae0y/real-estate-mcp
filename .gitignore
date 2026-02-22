@@ -1,5 +1,7 @@
 # Local files
+localdocs
 localdocs/
+.claude/
 .arxiv/
 .coverage
 AGENTS.md

@@ -95,3 +95,13 @@ For HTTP mode, other clients, or per-service API key configuration, see the docs
 | ChatGPT (web) | HTTP only | [docs/setup-chatgpt-web.md](docs/setup-chatgpt-web.md) |
 | Docker (HTTP + Caddy) | HTTP | [docs/setup-docker.md](docs/setup-docker.md) |
 | OAuth (public access) | — | [docs/setup-oauth.md](docs/setup-oauth.md) |
+
+## Contributors
+
+This project exists thanks to all the people who contribute. [[Contributing](https://github.com/tae0y/real-estate-mcp/blob/main/CONTRIBUTING.md)]
+
+<a href="https://github.com/tae0y/real-estate-mcp/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=tae0y/real-estate-mcp" />
+</a>
+
+Made with [contrib.rocks](https://contrib.rocks).

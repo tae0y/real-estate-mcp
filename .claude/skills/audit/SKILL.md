@@ -51,8 +51,26 @@ Triage by severity:
 
 If no vulnerabilities: output `Dependency audit passed ✓` only.
 
+## When to Run
+
+| Trigger | Action |
+|---------|--------|
+| New external dependency added | Run immediately after `uv add` |
+| Monthly cadence | Run and log result (even if clean) |
+| Before major release | Run as part of release checklist |
+
+## Execution Log
+
+After each audit run, append a one-line entry to `localdocs/worklog.done.md`:
+
+```
+worklog done  audit YYYY-MM-DD — [N vulnerabilities / clean]
+```
+
+This creates a lightweight audit trail without a separate log file.
+
 ## Notes
 
 - Detects known vulnerabilities in **installed packages** only
 - For code-level security issues, use the `check` skill (bandit)
-- Run at minimum monthly
+- Hook `check-external-lib-usage.sh` reminds you to run audit after new imports

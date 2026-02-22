@@ -288,16 +288,16 @@ git commit -m "chore: complete [feature], remove planning docs"
 START FEATURE
 │
 ├─► Create `localdocs/plan.<topic>.md` (get approval)
-├─► Use `worklog todo` to queue phase/session tasks
-├─► Use `worklog doing` to start tasks
+├─► worklog todo  ← each step from the plan
+├─► worklog doing ← first step (do this immediately, without waiting to be asked)
 │
 │   FOR EACH STEP:
 │   │
 │   ├─► RED: Failing test
 │   ├─► GREEN: Make it pass
 │   ├─► REFACTOR: If valuable
-│   ├─► Update `worklog` states
-│   ├─► Record completions in `localdocs/worklog.done.md`
+│   ├─► worklog done  ← completed step (do this immediately when done)
+│   ├─► worklog doing ← next step    (do this immediately after done)
 │   └─► **WAIT FOR COMMIT APPROVAL**
 │
 END FEATURE
@@ -306,3 +306,15 @@ END FEATURE
 ├─► Merge learnings (learn agent, adr agent)
 └─► Close/remove only `localdocs/plan.<topic>.md` (keep worklog files)
 ```
+
+## Worklog Automation Rule
+
+Call `worklog` automatically — do not wait for the user to ask.
+
+| Moment | Command |
+|--------|---------|
+| Plan approved, first step starts | `worklog todo [step2], [step3], ...` then `worklog doing [step1]` |
+| Step completes (tests pass) | `worklog done [step]` |
+| Next step begins | `worklog doing [next step]` |
+| Blocker appears | Update `worklog.doing.md` directly with blocker note |
+| Session ends | Ensure `worklog.doing.md` reflects current reality |

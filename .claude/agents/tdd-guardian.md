@@ -77,9 +77,9 @@ Check that tests follow principles:
 - ✅ Tests use the public API only
 - ❌ Tests do NOT access private methods or internal state
 - ✅ Tests have descriptive names documenting business behavior
-- ❌ Tests do NOT have names like "should call X method"
-- ✅ Tests use factory functions for test data
-- ❌ Tests do NOT use `let` declarations or `beforeEach`
+- ❌ Tests do NOT have names like "test_calls_validate_method"
+- ✅ Tests use fixture functions or factory helpers for test data
+- ❌ Tests do NOT share mutable state between test cases
 
 #### 4. Check for TDD Violations
 
@@ -90,8 +90,8 @@ Check that tests follow principles:
 - ❌ Adding features "while you're there" without tests
 - ❌ Tests examining implementation details
 - ❌ Missing edge case tests
-- ❌ Using `any` types or type assertions in tests
-- ❌ Using `let` or `beforeEach` (should use factories)
+- ❌ Patching internals instead of testing observable behavior
+- ❌ Sharing mutable state between tests (use fixtures instead)
 - ❌ Skipping refactoring assessment when green
 
 #### 5. Generate Structured Report
@@ -162,25 +162,24 @@ Test the outcome, not the internal call
 - Write descriptive test names
 
 **Example:**
-```typescript
-// ✅ GOOD - Behavior-focused, uses factory
-it("should reject payments with negative amounts", () => {
-  const payment = getMockPayment({ amount: -100 });
-  const result = processPayment(payment);
-  expect(result.success).toBe(false);
-  expect(result.error.message).toBe("Invalid amount");
-});
+```python
+# ✅ GOOD - Behavior-focused, uses factory fixture
+def make_payment(**overrides):
+    defaults = {"amount": 100, "currency": "KRW", "card_id": "card_123"}
+    return {**defaults, **overrides}
 
-// ❌ BAD - Implementation-focused, uses let
-let payment: Payment;
-beforeEach(() => {
-  payment = { amount: 100 };
-});
-it("should call validateAmount", () => {
-  const spy = jest.spyOn(validator, 'validateAmount');
-  processPayment(payment);
-  expect(spy).toHaveBeenCalled();
-});
+def test_rejects_payment_with_negative_amount():
+    payment = make_payment(amount=-100)
+    result = process_payment(payment)
+    assert result.success is False
+    assert result.error == "Invalid amount"
+
+# ❌ BAD - Implementation-focused, patches internals
+def test_calls_validate_amount(monkeypatch):
+    called = []
+    monkeypatch.setattr(validator, "validate_amount", lambda x: called.append(x))
+    process_payment({"amount": 100})
+    assert called  # tests HOW, not WHAT
 ```
 
 ### GREEN PHASE (Implementing)
@@ -274,43 +273,48 @@ Before allowing any commit, verify:
 - ✅ Tests verify behavior, not implementation
 - ✅ Implementation is minimal (only what's needed)
 - ✅ Refactoring assessment completed (if tests green)
-- ✅ All tests pass
-- ✅ TypeScript strict mode satisfied
-- ✅ No `any` types or unjustified assertions
-- ✅ Factory functions used (no `let`/`beforeEach`)
+- ✅ All tests pass (`uv run pytest`)
+- ✅ Type annotations present (mypy or pyright clean)
+- ✅ No bare `except:` or untested error paths
+- ✅ Fixture/factory functions used (no shared mutable state between tests)
 
 ## Project-Specific Guidelines
 
-From CLAUDE.md:
+**Runtime:** Python 3.12+, managed with `uv`. Run tests via `uv run pytest`.
 
 **Type System:**
-- Use `type` for data structures (with `readonly`)
-- Use `interface` only for behavior contracts/ports
-- Prefer options objects over positional parameters
-- Schema-first development with Zod
+- Use `dataclass` or `TypedDict` for data structures
+- Use `Protocol` for behavior contracts/ports
+- Prefer keyword arguments for multi-parameter functions
+- Use `pydantic.BaseModel` for schema-validated inputs
 
 **Code Style:**
-- No comments (code should be self-documenting)
-- Pure functions and immutable data
+- Type-annotate all public functions
+- Pure functions and immutable data where practical
 - Early returns over nested conditionals
-- Factory functions for test data
+- Factory helpers for test data (function or `@pytest.fixture`)
 
 **Test Data Pattern:**
-```typescript
-// ✅ CORRECT - Factory with optional overrides
-const getMockPayment = (
-  overrides?: Partial<Payment>
-): Payment => {
-  return {
-    amount: 100,
-    currency: "GBP",
-    cardId: "card_123",
-    ...overrides,
-  };
-};
+```python
+# ✅ CORRECT - Factory helper with keyword overrides
+from dataclasses import dataclass, replace
 
-// Usage
-const payment = getMockPayment({ amount: -100 });
+@dataclass
+class Payment:
+    amount: int
+    currency: str = "KRW"
+    card_id: str = "card_123"
+
+def make_payment(**overrides) -> Payment:
+    return replace(Payment(amount=100), **overrides)
+
+# Usage
+payment = make_payment(amount=-100)
+
+# ✅ ALSO CORRECT - pytest fixture for shared setup
+@pytest.fixture
+def valid_payment() -> Payment:
+    return Payment(amount=100)
 ```
 
 ## Commands to Use
@@ -322,6 +326,18 @@ const payment = getMockPayment({ amount: -100 });
 - `Grep` - Search for test patterns
 - `Read` - Examine specific files
 - `Glob` - Find test files
+
+## TDD Exemptions
+
+TDD applies to production business logic. The following categories are explicitly exempt — do not block or warn for these:
+
+- **Infrastructure/config:** Dockerfiles, `pyproject.toml`, CI YAML, `settings.json`, shell scripts
+- **Spikes/exploratory code:** Files clearly marked as spike, prototype, or POC (e.g., `spike_*.py`, `explore_*.ipynb`)
+- **Documentation:** Markdown files, docstrings, comments, ADRs, localdocs
+
+When the current task falls into an exempt category, skip the TDD workflow entirely and say so explicitly: "This is [infra/spike/docs] work — TDD does not apply here."
+
+---
 
 ## Your Mandate
 

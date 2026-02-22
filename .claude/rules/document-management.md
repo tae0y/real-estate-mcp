@@ -13,6 +13,7 @@ Project documents live in `localdocs/` and follow strict naming conventions. Ski
 | Worklog in-progress | `worklog.doing.md` | `localdocs/worklog.doing.md` |
 | Worklog completed | `worklog.done.md` | `localdocs/worklog.done.md` |
 | Reference material | `refer.*.md` | `localdocs/refer.openapi.md`, `localdocs/refer.agents.md` |
+| Architecture Decision Record | `adr/adr-NNN-*.md` | `localdocs/adr/adr-001-mcp-refactor.md` |
 
 ## Rules
 
@@ -22,3 +23,15 @@ Project documents live in `localdocs/` and follow strict naming conventions. Ski
 - **Use `learn.*.md`** for learning notes; do not overload worklog files for knowledge capture.
 - **One topic per file** — don't combine unrelated content into one backlog, plan, learn, or refer doc.
 - All documents go in `localdocs/` — they are local-only and not committed.
+- **ADR numbers are sequential per project.** Use kebab-case after the number. Never reuse or skip numbers. Store under `localdocs/adr/`.
+
+## Bootstrap (New Project Setup)
+
+`localdocs/` is gitignored and must be created manually per clone:
+
+```bash
+mkdir -p localdocs/adr
+touch localdocs/worklog.todo.md localdocs/worklog.doing.md localdocs/worklog.done.md
+```
+
+Seed the worklog files with a `# Worklog` heading before first use. Skills that read these files expect them to exist.

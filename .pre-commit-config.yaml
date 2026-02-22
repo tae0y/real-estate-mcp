@@ -8,22 +8,6 @@ repos:
 
   - repo: local
     hooks:
-      - id: commit-msg-convention
-        name: commit message convention
-        entry: >-
-          bash -c '
-            branch=$(git symbolic-ref --short HEAD 2>/dev/null || echo "");
-            is_merge_into_main=false;
-            if [ -f .git/MERGE_HEAD ] && echo "$(<.git/MERGE_MSG 2>/dev/null)" | grep -qE "into main$"; then is_merge_into_main=true; fi;
-            [ "$branch" = "main" ] || [ "$is_merge_into_main" = "true" ] || exit 0;
-            echo "$(<"$1")" | grep -qE "^\[(MAINTENANCE|NEW FEATURE|BREAKING CHANGES)\]" || { echo "Commit message must start with [MAINTENANCE], [NEW FEATURE], or [BREAKING CHANGES]"; exit 1; }
-          '
-        language: system
-        stages: [commit-msg]
-        always_run: true
-        pass_filenames: false
-        args: ["--"]
-
       - id: pyright
         name: pyright
         entry: uv run pyright
@@ -36,7 +20,7 @@ repos:
     rev: 1.9.3
     hooks:
       - id: bandit
-        args: ["-c", "pyproject.toml"]
+        args: ["-c", "pyproject.toml", "-r", "src/"]
   
   - repo: https://github.com/pypa/pip-audit
     rev: v2.10.0

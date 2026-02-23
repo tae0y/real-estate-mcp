@@ -20,7 +20,7 @@ repos:
     rev: 1.9.3
     hooks:
       - id: bandit
-        args: ["-c", "pyproject.toml"]
+        args: ["-c", "pyproject.toml", "-r", "src/"]
   
   - repo: https://github.com/pypa/pip-audit
     rev: v2.10.0

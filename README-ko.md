@@ -94,3 +94,13 @@ HTTP 모드, 다른 클라이언트, 서비스별 API 키 설정은 아래 문�
 | ChatGPT (웹) | HTTP only | [docs/setup-chatgpt-web.md](docs/setup-chatgpt-web.md) |
 | Docker (HTTP + Caddy) | HTTP | [docs/setup-docker.md](docs/setup-docker.md) |
 | OAuth (공개 접근) | — | [docs/setup-oauth.md](docs/setup-oauth.md) |
+
+## Contributors
+
+이 프로젝트는 다음 기여자들의 도움으로 운영되고 있습니다. [[Contributing](https://github.com/tae0y/real-estate-mcp/blob/main/CONTRIBUTING.md)]
+
+<a href="https://github.com/tae0y/real-estate-mcp/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=tae0y/real-estate-mcp" />
+</a>
+
+Made with [contrib.rocks](https://contrib.rocks).

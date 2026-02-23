@@ -86,7 +86,7 @@ async def token(
     tok = secrets.token_hex(32)
     expires_in = int(os.getenv("OAUTH_TOKEN_TTL", "3600"))
     _tokens[tok] = time.time() + expires_in
-    return {"access_token": tok, "token_type": "bearer", "expires_in": expires_in}
+    return {"access_token": tok, "token_type": "bearer", "expires_in": expires_in}  # nosec B105
 
 
 @app.get("/oauth/verify")

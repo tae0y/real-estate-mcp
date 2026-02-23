@@ -108,6 +108,6 @@ Made with [contrib.rocks](https://contrib.rocks).
 
 ## Support
 
-이 프로젝트가 유용하셨다면 커피 한 잔 사주세요!
+If you find this project useful, buy me a coffee!
 
 <a href="https://www.buymeacoffee.com/tae0y" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;" ></a>

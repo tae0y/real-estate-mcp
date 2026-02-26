@@ -35,6 +35,9 @@ Provides 14+ tools for querying apartment, officetel, villa, single-house, and c
   - 한국자산관리공사\_차세대 온비드 물건 입찰결과목록 조회서비스 / ⚠️ WIP
   - 한국자산관리공사\_차세대 온비드 물건 입찰결과상세 조회서비스 / ⚠️ WIP
   - [한국자산관리공사\_온비드 코드 조회서비스](https://www.data.go.kr/data/15000920/openapi.do)
+  - [한국자산관리공사\_온비드 물건 정보 조회서비스](https://www.data.go.kr/data/15000837/openapi.do)
+  - [한국자산관리공사\_차세대 온비드 물건 입찰결과목록 조회서비스](https://www.data.go.kr/data/15157252/openapi.do)
+  - [한국자산관리공사\_차세대 온비드 물건 입찰결과상세 조회서비스](https://www.data.go.kr/data/15157254/openapi.do)
   - [한국부동산원_청약홈_APT 분양정보](https://www.data.go.kr/data/15101046/fileData.do)
   - [한국부동산원_청약홈 청약 신청·당첨자 정보 조회 서비스](https://www.data.go.kr/data/15110812/openapi.do)
 

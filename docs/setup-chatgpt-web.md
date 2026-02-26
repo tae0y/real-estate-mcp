@@ -17,94 +17,101 @@ Complete the **Auth0** option in [setup-oauth.md](setup-oauth.md#option-b-auth0-
 
 ## Verify Before Connecting
 
-**1. Protected resource metadata (ChatGPT reads this first)**
+1. Protected resource metadata (ChatGPT reads this first)
 
-```bash
-curl https://your-domain.ddns.net/.well-known/oauth-protected-resource
-```
+    ```bash
+    curl https://your-domain.ddns.net/.well-known/oauth-protected-resource
+    ```
 
-Expected:
+    Expected:
 
-```json
-{
-  "resource": "https://your-domain.ddns.net/mcp",
-  "authorization_servers": ["https://your-tenant.us.auth0.com"],
-  "scopes_supported": []
-}
-```
+    ```json
+    {
+      "resource": "https://your-domain.ddns.net/mcp",
+      "authorization_servers": ["https://your-tenant.us.auth0.com"],
+      "scopes_supported": []
+    }
+    ```
 
-**2. Authorization server metadata (must include PKCE + registration_endpoint)**
+1. Authorization server metadata (must include PKCE + registration_endpoint)
 
-```bash
-curl https://your-domain.ddns.net/.well-known/oauth-authorization-server
-```
+    ```bash
+    curl https://your-domain.ddns.net/.well-known/oauth-authorization-server
+    ```
 
-Expected (key fields):
+    Expected (key fields):
 
-```json
-{
-  "authorization_endpoint": "https://your-tenant.us.auth0.com/authorize",
-  "token_endpoint": "https://your-tenant.us.auth0.com/oauth/token",
-  "registration_endpoint": "https://your-tenant.us.auth0.com/oidc/register",
-  "code_challenge_methods_supported": ["S256"]
-}
-```
+    ```json
+    {
+      "authorization_endpoint": "https://your-tenant.us.auth0.com/authorize",
+      "token_endpoint": "https://your-tenant.us.auth0.com/oauth/token",
+      "registration_endpoint": "https://your-tenant.us.auth0.com/oidc/register",
+      "code_challenge_methods_supported": ["S256"]
+    }
+    ```
 
-**3. MCP endpoint returns 401 (auth guard is active)**
+1. MCP endpoint returns 401 (auth guard is active)
 
-```bash
-curl -o /dev/null -w "%{http_code}" https://your-domain.ddns.net/mcp
-# Expected: 401
-```
+    ```bash
+    curl -o /dev/null -w "%{http_code}" https://your-domain.ddns.net/mcp
+    # Expected: 401
+    ```
 
-If this returns 406 or reaches the MCP server without auth, `AUTH_MODE` is not being read correctly by Caddy — verify the container env: `docker compose exec caddy sh -c 'env | grep AUTH_MODE'`
+    If this returns 406 or reaches the MCP server without auth, `AUTH_MODE` is not being read correctly by Caddy — verify the container env: `docker compose exec caddy sh -c 'env | grep AUTH_MODE'`
 
-**4. DCR endpoint**
+1. DCR endpoint
 
-```bash
-curl -X POST https://your-tenant.us.auth0.com/oidc/register \
-  -H "Content-Type: application/json" \
-  -d '{"client_name":"test","redirect_uris":["https://chatgpt.com/connector_platform_oauth_redirect"]}'
-```
+    ```bash
+    curl -X POST https://your-tenant.us.auth0.com/oidc/register \
+      -H "Content-Type: application/json" \
+      -d '{"client_name":"test","redirect_uris":["https://chatgpt.com/connector_platform_oauth_redirect"]}'
+    ```
 
-Expected: `{"client_id": "...", "client_secret": "...", ...}`
+    Expected: `{"client_id": "...", "client_secret": "...", ...}`
 
 ## Add the Connector in ChatGPT
 
 Once all four checks pass:
 
 1. Go to **Settings → Connectors** → **Add connector**
-2. Enter the MCP server URL:
+
+1. Enter the MCP server URL:
    ```
    https://your-domain.ddns.net/mcp
    ```
-3. ChatGPT automatically discovers Auth0 via `/.well-known/oauth-protected-resource` and redirects you to the Auth0 login page — **no client ID/secret input required**.
-4. Log in with the Auth0 user created in step 7 above.
-5. Confirm the `real-estate` tools appear in the connector tool list.
 
-## Access Control (Open / Close)
+1. ChatGPT automatically discovers Auth0 via `/.well-known/oauth-protected-resource` and redirects you to the Auth0 login page — **no client ID/secret input required**.
 
-### Open access (share with colleagues)
+1. Log in with the Auth0 user created in step 7 above.
 
-1. Auth0 → **Settings → Advanced → Enable Dynamic Client Registration**
-2. Auth0 → **User Management → Users → Create User** — create an account for each colleague
-3. Share the MCP URL: `https://your-domain.ddns.net/mcp`
-4. Colleagues add it as a ChatGPT connector and log in with their Auth0 account
+1. Confirm the `real-estate` tools appear in the connector tool list.
 
-### Close access (revoke all)
+## Access Control
 
-**Option A — Disable DCR (quickest, blocks all new and re-authentication)**
+### Grant access
 
-Auth0 → **Settings → Advanced → Disable Dynamic Client Registration**
+1. Auth0 → Settings → Advanced → Enable Dynamic Client Registration
 
-Existing sessions remain valid until token expiry (default 1 hour), then all users are blocked on re-authentication.
+1. Auth0 → User Management → Users → Create User*— create an account for each user
 
-**Option B — Block specific users**
+1. Share the MCP URL: `https://your-domain.ddns.net/mcp`
 
-Auth0 → **User Management → Users** → select user → **Block**
+1. Users add it as a ChatGPT connector and log in with their Auth0 account
 
-Blocks that user immediately on next token refresh without affecting others.
+### Revoke access
 
-### Remove your own connector
+1. Option A — Disable DCR (quickest, blocks all new and re-authentication)
+
+    Auth0 → Settings → Advanced → Disable Dynamic Client Registration
+
+    Existing sessions remain valid until token expiry (default 1 hour), then all users are blocked on re-authentication.
+
+1. Option B — Block specific users
+
+    Auth0 → *ser Management → Users → select user → Block
+    
+    Blocks that user immediately on next token refresh without affecting others.
+
+## Remove your own connector
 
 Go to **Settings → Connectors** and delete the `real-estate` connector entry.

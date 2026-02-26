@@ -12,67 +12,69 @@ This page describes how to connect the real estate MCP server to [Claude.ai](htt
 
 ## Server Setup
 
-Enable OAuth with the **client credentials** option in [setup-oauth.md](setup-oauth.md#option-a-client-credentials-claude-web--colleagues).
+Enable OAuth with the **client credentials** option in [setup-oauth.md](setup-oauth.md#option-a-client-credentials-claude-web).
 
 ## Verify Before Connecting
 
 Run these three checks before adding the integration in Claude.ai.
 
-**1. OAuth discovery**
+1. OAuth discovery
 
-```bash
-curl https://your-domain.ddns.net/.well-known/oauth-authorization-server
-```
+    ```bash
+    curl https://your-domain.ddns.net/.well-known/    oauth-authorization-server
+    ```
 
-Expected response:
+    Expected response:
 
-```json
-{
-  "issuer": "https://your-domain.ddns.net",
-  "token_endpoint": "https://your-domain.ddns.net/oauth/token",
-  "grant_types_supported": ["client_credentials"],
-  "token_endpoint_auth_methods_supported": ["client_secret_post"]
-}
-```
+    ```json
+    {
+      "issuer": "https://your-domain.ddns.net",
+      "token_endpoint": "https://your-domain.ddns.net/oauth/token",
+      "grant_types_supported": ["client_credentials"],
+      "token_endpoint_auth_methods_supported": ["client_secret_post"]
+    }
+    ```
 
-**2. Token issuance**
+1. Token issuance
 
-```bash
-curl -X POST https://your-domain.ddns.net/oauth/token \
-  -d "grant_type=client_credentials&client_id=YOUR_ID&client_secret=YOUR_SECRET"
-```
+    ```bash
+    curl -X POST https://your-domain.ddns.net/oauth/token \
+      -d "grant_type=client_credentials&client_id=YOUR_ID&client_secret=YOUR_SECRET"
+    ```
 
-Expected: `{"access_token": "...", "token_type": "bearer", "expires_in": 3600}`
+    Expected: `{"access_token": "...", "token_type": "bearer", "expires_in": 3600}`
 
-**3. MCP access**
+1. MCP access
 
-```bash
-TOKEN=<access_token from above>
-curl -X POST https://your-domain.ddns.net/mcp \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'
-```
+    ```bash
+    TOKEN=<access_token from above>
+    curl -X POST https://your-domain.ddns.net/mcp \
+      -H "Authorization: Bearer $TOKEN" \
+      -H "Content-Type: application/json" \
+      -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'
+    ```
 
-Expected: JSON response listing the `real-estate` tools.
+    Expected: JSON response listing the `real-estate` tools.
 
 ## Add the Integration in Claude.ai
 
 Once all three checks pass:
 
 1. Go to **Settings → Integrations** → **Add Integration**
-2. Enter the MCP server URL:
+
+1. Enter the MCP server URL:
    ```
    https://your-domain.ddns.net/mcp
    ```
-3. Select **OAuth** as the authentication type and enter:
+
+1. Select **OAuth** as the authentication type and enter:
 
    | Field | Value |
    |-------|-------|
    | Client ID | `OAUTH_CLIENT_ID` from `.env` |
    | Client Secret | `OAUTH_CLIENT_SECRET` from `.env` |
 
-4. Confirm the `real-estate` tools appear in the integration tool list.
+1. Confirm the `real-estate` tools appear in the integration tool list.
 
 ## Project Instructions (Optional)
 

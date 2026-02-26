@@ -19,7 +19,7 @@ from real_estate.mcp_server.tools.onbid import (
     get_public_auction_item_detail,
 )
 
-_ONBID_DETAIL_URL = "http://apis.data.go.kr/B010003/OnbidCltrBidRsltDtlSrvc/getCltrBidRsltDtl"
+_ONBID_DETAIL_URL = "https://apis.data.go.kr/B010003/OnbidCltrBidRsltDtlSrvc/getCltrBidRsltDtl"
 _ONBID_THING_LIST_URL = (
     "http://openapi.onbid.co.kr/openapi/services/ThingInfoInquireSvc/getUnifyUsageCltr"
 )
@@ -89,6 +89,33 @@ class TestOnbidHelpers:
         code, _body, items = _onbid_extract_items(payload_list)
         assert code == "00"
         assert items == [{"a": 1}, {"b": 2}]
+
+    def test_onbid_extract_items_handles_flat_header_body(self) -> None:
+        """B010003 actual API returns {"header": {...}, "body": {...}} without "response"."""
+        payload: dict[str, Any] = {
+            "header": {"resultCode": "00", "resultMsg": "NORMAL_CODE"},
+            "body": {
+                "items": {"item": [{"cltrMngNo": "X"}]},
+                "totalCount": 1,
+            },
+        }
+        code, body, items = _onbid_extract_items(payload)
+        assert code == "00"
+        assert items == [{"cltrMngNo": "X"}]
+        assert body.get("totalCount") == 1
+
+    def test_onbid_extract_items_handles_result_wrapper(self) -> None:
+        """API error responses may use {"result": {...}} instead of {"response": {...}}."""
+        payload: dict[str, Any] = {
+            "result": {
+                "resultCode": "11",
+                "resultMsg": "NO_MANDATORY_REQUEST_PARAMETERS_ERROR",
+            }
+        }
+        code, body, items = _onbid_extract_items(payload)
+        assert code == "11"
+        assert items == []
+        assert body.get("resultMsg") == "NO_MANDATORY_REQUEST_PARAMETERS_ERROR"
 
 
 class TestParseOnbidThingInfoListXml:

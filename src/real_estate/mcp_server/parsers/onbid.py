@@ -40,8 +40,21 @@ def _onbid_extract_items(
         header = _as_str_key_dict(response.get("header"))
         body = _as_str_key_dict(response.get("body"))
     else:
-        header = payload
-        body = payload
+        # B010003 may return {"header": {...}, "body": {...}} without "response"
+        flat_header = _as_str_key_dict(payload.get("header"))
+        flat_body = _as_str_key_dict(payload.get("body"))
+        if flat_header and flat_body:
+            header = flat_header
+            body = flat_body
+        else:
+            # Error responses from B010003 use {"result": {...}} wrapper
+            result_wrapper = _as_str_key_dict(payload.get("result"))
+            if result_wrapper:
+                header = result_wrapper
+                body = result_wrapper
+            else:
+                header = payload
+                body = payload
 
     result_code_value = header.get("resultCode")
     result_code = str(result_code_value) if result_code_value is not None else ""

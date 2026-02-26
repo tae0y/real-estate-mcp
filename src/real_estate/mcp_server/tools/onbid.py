@@ -30,20 +30,19 @@ from real_estate.mcp_server.parsers.onbid import (
     _parse_onbid_thing_info_list_xml,
 )
 
-
 @mcp.tool()
 async def get_public_auction_items(
+    opbd_dt_start: str,
+    opbd_dt_end: str,
+    cltr_type_cd: str,
+    prpt_div_cd: str,
+    dsps_mthod_cd: str,
+    bid_div_cd: str,
     page_no: int = 1,
     num_of_rows: int = 20,
-    cltr_type_cd: str | None = None,
-    prpt_div_cd: str | None = None,
-    dsps_mthod_cd: str | None = None,
-    bid_div_cd: str | None = None,
     lctn_sdnm: str | None = None,
     lctn_sggnm: str | None = None,
     lctn_emd_nm: str | None = None,
-    opbd_dt_start: str | None = None,
-    opbd_dt_end: str | None = None,
     apsl_evl_amt_start: int | None = None,
     apsl_evl_amt_end: int | None = None,
     lowst_bid_prc_start: int | None = None,
@@ -76,14 +75,15 @@ async def get_public_auction_items(
       - Reuse DATA_GO_KR_API_KEY.
 
     Args:
+        opbd_dt_start: Opening date start (yyyyMMdd, required).
+        opbd_dt_end: Opening date end (yyyyMMdd, required).
+        cltr_type_cd: Item type code (required, e.g., "0001" real estate).
+        prpt_div_cd: Property division code (required, e.g., "0007" seized, "0010" state).
+        dsps_mthod_cd: Disposal method code (required, e.g., "0001" sale, "0002" lease).
+        bid_div_cd: Bid division code (required, e.g., "0001" internet, "0002" on-site).
         page_no: Page number (1-based).
         num_of_rows: Items per page.
-        cltr_type_cd: Item type code (e.g., "0001" real estate).
-        prpt_div_cd: Property division code.
-        dsps_mthod_cd: Disposal method code (e.g., "0001" sale, "0002" lease).
-        bid_div_cd: Bid division code.
         lctn_sdnm/lctn_sggnm/lctn_emd_nm: Location (sido/sgg/emd) names.
-        opbd_dt_start/opbd_dt_end: Opening date range (yyyyMMdd).
         apsl_evl_amt_start/end: Appraisal amount range (won).
         lowst_bid_prc_start/end: Lowest bid price range (won).
         pbct_stat_cd: Bid result status code.
@@ -96,6 +96,18 @@ async def get_public_auction_items(
         num_of_rows: Page size.
         error/message: Present on API/network/config failure.
     """
+    if not opbd_dt_start.strip():
+        return {"error": "validation_error", "message": "opbd_dt_start is required (yyyyMMdd)"}
+    if not opbd_dt_end.strip():
+        return {"error": "validation_error", "message": "opbd_dt_end is required (yyyyMMdd)"}
+    if not cltr_type_cd.strip():
+        return {"error": "validation_error", "message": "cltr_type_cd is required"}
+    if not prpt_div_cd.strip():
+        return {"error": "validation_error", "message": "prpt_div_cd is required"}
+    if not dsps_mthod_cd.strip():
+        return {"error": "validation_error", "message": "dsps_mthod_cd is required"}
+    if not bid_div_cd.strip():
+        return {"error": "validation_error", "message": "bid_div_cd is required"}
     if page_no < 1:
         return {"error": "validation_error", "message": "page_no must be >= 1"}
     if num_of_rows < 1:
@@ -110,25 +122,19 @@ async def get_public_auction_items(
         "pageNo": page_no,
         "numOfRows": num_of_rows,
         "resultType": "json",
+        "cltrTypeCd": cltr_type_cd,
+        "prptDivCd": prpt_div_cd,
+        "dspsMthodCd": dsps_mthod_cd,
+        "bidDivCd": bid_div_cd,
     }
-    if cltr_type_cd:
-        params["cltrTypeCd"] = cltr_type_cd
-    if prpt_div_cd:
-        params["prptDivCd"] = prpt_div_cd
-    if dsps_mthod_cd:
-        params["dspsMthodCd"] = dsps_mthod_cd
-    if bid_div_cd:
-        params["bidDivCd"] = bid_div_cd
     if lctn_sdnm:
         params["lctnSdnm"] = lctn_sdnm
     if lctn_sggnm:
         params["lctnSggnm"] = lctn_sggnm
     if lctn_emd_nm:
         params["lctnEmdNm"] = lctn_emd_nm
-    if opbd_dt_start:
-        params["opbdDtStart"] = opbd_dt_start
-    if opbd_dt_end:
-        params["opbdDtEnd"] = opbd_dt_end
+    params["opbdDtStart"] = opbd_dt_start
+    params["opbdDtEnd"] = opbd_dt_end
     if apsl_evl_amt_start is not None:
         params["apslEvlAmtStart"] = apsl_evl_amt_start
     if apsl_evl_amt_end is not None:
@@ -154,7 +160,11 @@ async def get_public_auction_items(
         return {
             "error": "api_error",
             "code": result_code,
-            "message": str((payload.get("resultMsg") or "")).strip() or "Onbid API error",
+            "message": (
+                str(body.get("resultMsg", "")).strip()
+                or str((payload.get("resultMsg") or "")).strip()
+                or "Onbid API error"
+            ),
         }
 
     try:
@@ -229,7 +239,11 @@ async def get_public_auction_item_detail(
         return {
             "error": "api_error",
             "code": result_code,
-            "message": str((payload.get("resultMsg") or "")).strip() or "Onbid API error",
+            "message": (
+                str(body.get("resultMsg", "")).strip()
+                or str((payload.get("resultMsg") or "")).strip()
+                or "Onbid API error"
+            ),
         }
 
     try:

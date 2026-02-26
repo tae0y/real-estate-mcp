@@ -79,7 +79,8 @@ indent-style = "space"
 testpaths = ["tests"]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
-addopts = "--cov=src/real_estate --cov-report=term-missing --cov-fail-under=80"
+addopts = "--cov=src/real_estate --cov-report=term-missing --cov-fail-under=80 -m 'not e2e'"
+markers = ["e2e: End-to-end tests that call real external APIs (deselected by default)"]
 
 [tool.coverage.run]
 source = ["src/real_estate"]

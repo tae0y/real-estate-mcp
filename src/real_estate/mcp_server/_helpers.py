@@ -3,8 +3,14 @@
 from __future__ import annotations
 
 import os
+import ssl
 import statistics
+import subprocess
+import sys
+import tempfile
 import urllib.parse
+from functools import lru_cache
+from pathlib import Path
 from typing import Any
 
 import httpx
@@ -88,10 +94,85 @@ def _build_url(base: str, region_code: str, year_month: str, num_of_rows: int) -
 # ---------------------------------------------------------------------------
 
 
+def _is_truthy(value: str | None) -> bool:
+    """Return True when the string value means "enabled"."""
+    return (value or "").strip().lower() in {"1", "true", "yes", "on"}
+
+
+@lru_cache(maxsize=1)
+def _get_macos_keychain_ca_bundle() -> str | None:
+    """Build a CA bundle from macOS keychains and return the file path."""
+    if sys.platform != "darwin":
+        return None
+
+    keychains = [
+        "/Library/Keychains/System.keychain",
+        "/System/Library/Keychains/SystemRootCertificates.keychain",
+    ]
+    user_keychain = Path.home() / "Library/Keychains/login.keychain-db"
+    if user_keychain.exists():
+        keychains.append(str(user_keychain))
+
+    try:
+        result = subprocess.run(
+            ["security", "find-certificate", "-a", "-p", *keychains],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+    except (OSError, subprocess.CalledProcessError):
+        return None
+
+    if "BEGIN CERTIFICATE" not in result.stdout:
+        return None
+
+    bundle_path = Path(tempfile.gettempdir()) / "real-estate-mcp-macos-keychain-ca.pem"
+    try:
+        bundle_path.write_text(result.stdout, encoding="utf-8")
+    except OSError:
+        return None
+    return str(bundle_path)
+
+
+def _resolve_ssl_verify() -> bool | ssl.SSLContext:
+    """Resolve the TLS verification strategy for httpx."""
+    if _is_truthy(os.getenv("REAL_ESTATE_INSECURE_SSL")):
+        return False
+
+    ca_bundle = os.getenv("REAL_ESTATE_SSL_CA_BUNDLE", "").strip()
+    if ca_bundle:
+        context = _create_ssl_context(ca_bundle)
+        if context:
+            return context
+
+    use_macos_keychain = os.getenv("REAL_ESTATE_USE_MACOS_KEYCHAIN_CA", "1")
+    if _is_truthy(use_macos_keychain):
+        bundle = _get_macos_keychain_ca_bundle()
+        if bundle:
+            context = _create_ssl_context(bundle)
+            if context:
+                return context
+
+    return True
+
+
+def _create_ssl_context(ca_bundle: str) -> ssl.SSLContext | None:
+    """Create an SSL context from a CA bundle path."""
+    try:
+        return ssl.create_default_context(cafile=ca_bundle)
+    except OSError:
+        return None
+
+
+def _build_async_client(headers: dict[str, str] | None = None) -> httpx.AsyncClient:
+    """Create an AsyncClient with shared timeout and SSL verification settings."""
+    return httpx.AsyncClient(timeout=15.0, headers=headers, verify=_resolve_ssl_verify())
+
+
 async def _fetch_xml(url: str) -> tuple[str | None, dict[str, Any] | None]:
     """Perform an async HTTP GET and return the response body or an error dict."""
     try:
-        async with httpx.AsyncClient(timeout=15.0) as client:
+        async with _build_async_client() as client:
             response = await client.get(url)
             response.raise_for_status()
             return response.text, None
@@ -112,7 +193,7 @@ async def _fetch_json(
 ) -> tuple[dict[str, Any] | list[Any] | None, dict[str, Any] | None]:
     """Perform an async HTTP GET and return decoded JSON or an error dict."""
     try:
-        async with httpx.AsyncClient(timeout=15.0, headers=headers) as client:
+        async with _build_async_client(headers=headers) as client:
             response = await client.get(url)
             response.raise_for_status()
             return response.json(), None

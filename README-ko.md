@@ -14,7 +14,7 @@
 - [x] 상업용 건물 매매 (`get_commercial_trade`)
 - [x] 아파트 청약 공고 / 결과 (`get_apt_subscription_info`, `get_apt_subscription_results`)
 - [ ] 온비드 공매 입찰결과 (`get_public_auction_items`, `get_public_auction_item_detail`) / ⚠️ 준비중
-- [ ] 온비드 물건 조회 (`get_onbid_thing_info_list`) / ⚠️ WIP
+- [ ] 온비드 물건 조회 (`get_onbid_thing_info_list`) / ⚠️ 준비중
 - [x] 온비드 코드·주소 조회 (`get_onbid_*_code_info`, `get_onbid_addr*_info`)
 - [x] 지역코드 조회 (`get_region_code`)
 

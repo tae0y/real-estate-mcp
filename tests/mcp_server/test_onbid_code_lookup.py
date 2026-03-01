@@ -18,13 +18,21 @@ from real_estate.mcp_server.tools.onbid import (
     get_onbid_top_code_info,
 )
 
-_TOP_URL = "http://openapi.onbid.co.kr/openapi/services/OnbidCodeInfoInquireSvc/getOnbidTopCodeInfo"
+_TOP_URL = (
+    "http://openapi.onbid.co.kr/openapi/services/OnbidCodeInfoInquireSvc/getOnbidTopCodeInfo"
+)
 _MIDDLE_URL = (
     "http://openapi.onbid.co.kr/openapi/services/OnbidCodeInfoInquireSvc/getOnbidMiddleCodeInfo"
 )
-_ADDR1_URL = "http://openapi.onbid.co.kr/openapi/services/OnbidCodeInfoInquireSvc/getOnbidAddr1Info"
-_ADDR2_URL = "http://openapi.onbid.co.kr/openapi/services/OnbidCodeInfoInquireSvc/getOnbidAddr2Info"
-_ADDR3_URL = "http://openapi.onbid.co.kr/openapi/services/OnbidCodeInfoInquireSvc/getOnbidAddr3Info"
+_ADDR1_URL = (
+    "http://openapi.onbid.co.kr/openapi/services/OnbidCodeInfoInquireSvc/getOnbidAddr1Info"
+)
+_ADDR2_URL = (
+    "http://openapi.onbid.co.kr/openapi/services/OnbidCodeInfoInquireSvc/getOnbidAddr2Info"
+)
+_ADDR3_URL = (
+    "http://openapi.onbid.co.kr/openapi/services/OnbidCodeInfoInquireSvc/getOnbidAddr3Info"
+)
 _DTL_ADDR_URL = (
     "http://openapi.onbid.co.kr/openapi/services/OnbidCodeInfoInquireSvc/getOnbidDtlAddrInfo"
 )

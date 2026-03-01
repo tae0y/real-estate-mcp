@@ -38,10 +38,10 @@ _ONBID_BID_RESULT_DETAIL_URL = (
 )
 
 _ONBID_THING_INFO_LIST_URL = (
-    "https://openapi.onbid.co.kr/openapi/services/ThingInfoInquireSvc/getUnifyUsageCltr"
+    "http://openapi.onbid.co.kr/openapi/services/ThingInfoInquireSvc/getUnifyUsageCltr"
 )
 
-_ONBID_CODE_INFO_BASE_URL = "https://openapi.onbid.co.kr/openapi/services/OnbidCodeInfoInquireSvc"
+_ONBID_CODE_INFO_BASE_URL = "http://openapi.onbid.co.kr/openapi/services/OnbidCodeInfoInquireSvc"
 _ONBID_CODE_TOP_URL = f"{_ONBID_CODE_INFO_BASE_URL}/getOnbidTopCodeInfo"
 _ONBID_CODE_MIDDLE_URL = f"{_ONBID_CODE_INFO_BASE_URL}/getOnbidMiddleCodeInfo"
 _ONBID_CODE_BOTTOM_URL = f"{_ONBID_CODE_INFO_BASE_URL}/getOnbidBottomCodeInfo"

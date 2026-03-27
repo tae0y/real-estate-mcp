@@ -28,6 +28,8 @@ services:
       start_period: 10s
       retries: 3
 
+  # Deprecated: Caddy will be removed at end of April 2025.
+  # Migrate to the cloudflared service below — see docs/setup-cloudflare.md.
   caddy:
     image: caddy:2-alpine
     ports:
@@ -45,11 +47,26 @@ services:
       mcp:
         condition: service_healthy
     restart: unless-stopped
+    profiles:
+      - caddy
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    command: tunnel --no-autoupdate run
+    environment:
+      - TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN}
+    networks:
+      - internal
+    restart: unless-stopped
+    depends_on:
+      mcp:
+        condition: service_healthy
+    profiles:
+      - cloudflare
 
 networks:
   internal:
-    # mcp is not exposed directly; only caddy reaches it
-    internal: false
+    driver: bridge
 
 volumes:
   caddy_data:

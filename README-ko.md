@@ -89,17 +89,18 @@
 
 ## Connect with Other Clients
 
-HTTP 모드, 다른 클라이언트, 서비스별 API 키 설정은 아래 문서를 참고하세요.
+다른 클라이언트, 전송 방식, 서비스별 API 키 설정은 아래 문서를 참고하세요.
 
-| 클라이언트 | 전송 방식 | 가이드 |
-|-----------|----------|--------|
-| Claude Desktop | stdio / HTTP | [docs/setup-claude-desktop.md](docs/setup-claude-desktop.md) |
-| Claude (웹) | HTTP only | [docs/setup-claude-web.md](docs/setup-claude-web.md) |
-| Claude CLI | stdio / HTTP | [docs/setup-claude-cli.md](docs/setup-claude-cli.md) |
-| Codex CLI | stdio / HTTP | [docs/setup-codex-cli.md](docs/setup-codex-cli.md) |
-| ChatGPT (웹) | HTTP only | [docs/setup-chatgpt-web.md](docs/setup-chatgpt-web.md) |
-| Docker (HTTP + Caddy) | HTTP | [docs/setup-docker.md](docs/setup-docker.md) |
-| OAuth (공개 접근) | — | [docs/setup-oauth.md](docs/setup-oauth.md) |
+| 가이드 | 전송 방식 | 클라이언트 |
+|--------|----------|-----------|
+| [docs/setup-prerequisites.md](docs/setup-prerequisites.md) | — | 전체 공통 |
+| [docs/setup-with-stdio.md](docs/setup-with-stdio.md) | stdio / 로컬 HTTP | Claude Desktop, Claude CLI, Codex CLI |
+| [docs/setup-with-http.md](docs/setup-with-http.md) | HTTP (원격) | Claude (웹), Claude CLI, Codex CLI |
+| [docs/setup-reverse-proxy.md](docs/setup-reverse-proxy.md) | — | 서버 사이드 프록시 설정 (Cloudflare Tunnel / Caddy) |
+
+> **Deprecation 공지 (2025년 4월):** ChatGPT 지원과 Caddy 리버스 프록시 옵션이 2025년 4월 말에 제거됩니다.
+> ChatGPT에서 요구하는 OAuth 흐름(Auth0 + PKCE + DCR)이 복잡하여 제거합니다 — 향후 재구현 예정입니다.
+> Caddy는 [Cloudflare Tunnel](docs/setup-reverse-proxy.md)로 대체됩니다. 포트 포워딩과 TLS 인증서 관리가 불필요한 방식입니다.
 
 ## Contributors
 

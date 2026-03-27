@@ -90,17 +90,18 @@ The fastest way to get started — the server runs as a child process of Claude 
 
 ## Connect with Other Clients
 
-For HTTP mode, other clients, or per-service API key configuration, see the docs below.
+For other clients, transport options, or per-service API key configuration, see the docs below.
 
-| Client | Transport | Guide |
-|--------|-----------|-------|
-| Claude Desktop | stdio / HTTP | [docs/setup-claude-desktop.md](docs/setup-claude-desktop.md) |
-| Claude (web) | HTTP only | [docs/setup-claude-web.md](docs/setup-claude-web.md) |
-| Claude CLI | stdio / HTTP | [docs/setup-claude-cli.md](docs/setup-claude-cli.md) |
-| Codex CLI | stdio / HTTP | [docs/setup-codex-cli.md](docs/setup-codex-cli.md) |
-| ChatGPT (web) | HTTP only | [docs/setup-chatgpt-web.md](docs/setup-chatgpt-web.md) |
-| Docker (HTTP + Caddy) | HTTP | [docs/setup-docker.md](docs/setup-docker.md) |
-| OAuth (public access) | — | [docs/setup-oauth.md](docs/setup-oauth.md) |
+| Guide | Transport | Clients |
+|-------|-----------|---------|
+| [docs/setup-prerequisites.md](docs/setup-prerequisites.md) | — | All clients |
+| [docs/setup-with-stdio.md](docs/setup-with-stdio.md) | stdio / local HTTP | Claude Desktop, Claude CLI, Codex CLI |
+| [docs/setup-with-http.md](docs/setup-with-http.md) | HTTP (remote) | Claude (web), Claude CLI, Codex CLI |
+| [docs/setup-reverse-proxy.md](docs/setup-reverse-proxy.md) | — | Server-side proxy setup (Cloudflare Tunnel / Caddy) |
+
+> **Deprecation notice (April 2025):** ChatGPT support and the Caddy reverse proxy option will be removed at the end of April 2025.
+> ChatGPT's required OAuth flow (Auth0 + PKCE + DCR) is too complex to maintain — it will be re-evaluated for a future release.
+> Caddy is replaced by [Cloudflare Tunnel](docs/setup-reverse-proxy.md), which requires no port forwarding and no TLS certificate management.
 
 ## Contributors
 

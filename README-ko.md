@@ -3,7 +3,14 @@
 [English](README.md) | [한국어](README-ko.md)
 
 국토교통부 공공데이터 API를 기반으로 Claude에게 한국 부동산 실거래가를 질문할 수 있는 MCP 서버입니다.
-국토교통부 실거래가 API를 MCP 서버로 제공하며, 아파트·오피스텔·빌라·단독주택·상업용 건물의 매매·전월세, 청약 공고·결과, 온비드 공매 조회를 포함한 14개 이상의 도구를 제공합니다.
+국토교통부 실거래가 API를 MCP 서버로 제공하며, 아파트·오피스텔·빌라·단독주택·상업용 건물의 매매·전월세, 청약 공고·결과를 포함한 14개 이상의 도구를 제공합니다.
+
+> [!WARNING]
+> **지원 종료 안내 — 2025년 6월 1일부**
+>
+> **Caddy 리버스 프록시** 지원이 제거됩니다. Cloudflare Tunnel을 대안으로 권장하며, `docker/docker-compose.yml`에 `--profile cloudflare`로 이미 준비되어 있습니다. 마이그레이션 방법은 [docs/setup-reverse-proxy.md](docs/setup-reverse-proxy.md)를 참고하세요.
+>
+> **온비드(공매) 지원**이 제거됩니다. 온비드 API 오류 패치 작업이 반복적으로 발생해 개인 프로젝트로 유지하기 어려웠습니다. `get_public_auction_*` 및 `get_onbid_*` 관련 도구가 전부 삭제됩니다.
 
 ## Supported Tools
 
@@ -13,9 +20,9 @@
 - [x] 단독·다가구 매매 / 전월세 (`get_single_house_trades`, `get_single_house_rent`)
 - [x] 상업용 건물 매매 (`get_commercial_trade`)
 - [x] 아파트 청약 공고 / 결과 (`get_apt_subscription_info`, `get_apt_subscription_results`)
-- [ ] 온비드 공매 입찰결과 (`get_public_auction_items`, `get_public_auction_item_detail`) / ⚠️ 준비중
-- [ ] 온비드 물건 조회 (`get_onbid_thing_info_list`) / ⚠️ 준비중
-- [x] 온비드 코드·주소 조회 (`get_onbid_*_code_info`, `get_onbid_addr*_info`)
+- [ ] ~~온비드 공매 입찰결과 (`get_public_auction_items`, `get_public_auction_item_detail`)~~ / 🗑️ 2025년 6월 1일 제거
+- [ ] ~~온비드 물건 조회 (`get_onbid_thing_info_list`)~~ / 🗑️ 2025년 6월 1일 제거
+- [ ] ~~온비드 코드·주소 조회 (`get_onbid_*_code_info`, `get_onbid_addr*_info`)~~ / 🗑️ 2025년 6월 1일 제거
 - [x] 지역코드 조회 (`get_region_code`)
 
 ## Prerequisites

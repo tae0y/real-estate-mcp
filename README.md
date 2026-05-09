@@ -2,8 +2,8 @@
 
 [English](README.md) | [한국어](README-ko.md)
 
-Ask Claude about Korean apartment prices — powered by MOLIT's open API.
-Provides 14+ tools for querying apartment, officetel, villa, single-house, and commercial trade/rent data, and apartment subscriptions.
+Connect Claude to Korea's MOLIT real estate API and simulate **buy now / buy later / invest only** scenarios based on your income, savings, and retirement goals.
+Provides 14+ tools for live transaction data and financial calculations — apartment, officetel, villa, single-house, and commercial.
 
 > [!WARNING]
 > **Deprecation Notice — effective June 1, 2025**

@@ -4,6 +4,7 @@ HTTP calls are mocked with respx so the real API is never called.
 """
 
 import urllib.parse
+from pathlib import Path
 from unittest.mock import patch
 
 import pytest
@@ -18,7 +19,9 @@ from real_estate.mcp_server._helpers import (
 )
 from real_estate.mcp_server.tools.subscription import (
     _annotate_pre_occupancy,
+    _build_default_filename,
     _normalize_year_month,
+    download_subscription_pdf,
     get_apt_subscription_info,
     get_apt_subscription_results,
     get_apt_subscription_supply_prices,
@@ -409,6 +412,195 @@ class TestGetAptSubscriptionSupplyPrices:
 
         assert result["error"] == "parse_error"
         assert "OCR" in result["message"]
+
+
+class TestDownloadSubscriptionPdf:
+    """Integration tests for download_subscription_pdf."""
+
+    @pytest.fixture(autouse=True)
+    def set_api_key(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setenv("ODCLOUD_API_KEY", "test-odcloud-key")
+        monkeypatch.delenv("ODCLOUD_SERVICE_KEY", raising=False)
+        monkeypatch.delenv("DATA_GO_KR_API_KEY", raising=False)
+
+    async def test_missing_save_dir_returns_validation_error(self) -> None:
+        result = await download_subscription_pdf(save_dir="", pblanc_url="https://x/y.pdf")
+        assert result["error"] == "validation_error"
+
+    async def test_missing_source_inputs_returns_validation_error(self, tmp_path) -> None:
+        result = await download_subscription_pdf(save_dir=str(tmp_path))
+        assert result["error"] == "validation_error"
+
+    async def test_blank_filename_rejected(self, tmp_path) -> None:
+        result = await download_subscription_pdf(
+            save_dir=str(tmp_path),
+            pblanc_url="https://example.com/a.pdf",
+            filename="   ",
+        )
+        assert result["error"] == "validation_error"
+
+    @respx.mock
+    async def test_direct_url_writes_file_with_default_filename(self, tmp_path) -> None:
+        pdf_url = "https://example.com/notice.pdf"
+        pdf_bytes = b"%PDF-1.4\nfake body"
+        respx.get(pdf_url).mock(
+            return_value=Response(
+                200, content=pdf_bytes, headers={"content-type": "application/pdf"}
+            )
+        )
+
+        result = await download_subscription_pdf(
+            save_dir=str(tmp_path), pblanc_url=pdf_url
+        )
+
+        assert "error" not in result
+        saved = Path(result["saved_path"])
+        assert saved.exists()
+        assert saved.read_bytes() == pdf_bytes
+        assert result["file_size_bytes"] == len(pdf_bytes)
+        assert result["overwrote"] is False
+        # Default filename starts with "subscription_notice" when no metadata.
+        assert saved.name.endswith(".pdf")
+
+    @respx.mock
+    async def test_lookup_then_download_uses_house_name_in_filename(self, tmp_path) -> None:
+        lookup_payload = {
+            "currentCount": 1,
+            "data": [
+                {
+                    "HOUSE_MANAGE_NO": "2024000123",
+                    "HOUSE_NM": "더샵 인테그리티",
+                    "PBLANC_URL": "https://example.com/notice.pdf",
+                }
+            ],
+            "matchCount": 1,
+            "page": 1,
+            "perPage": 1,
+            "totalCount": 1,
+        }
+        respx.get(_INFO_URL).mock(return_value=Response(200, json=lookup_payload))
+        respx.get("https://example.com/notice.pdf").mock(
+            return_value=Response(
+                200, content=b"%PDF-1.4\nfake", headers={"content-type": "application/pdf"}
+            )
+        )
+
+        result = await download_subscription_pdf(
+            save_dir=str(tmp_path), house_manage_no="2024000123"
+        )
+
+        assert result["house_name"] == "더샵 인테그리티"
+        saved = Path(result["saved_path"])
+        # 공백이 _ 로 치환되어야 함
+        assert "더샵_인테그리티" in saved.name
+        assert "2024000123" in saved.name
+        assert saved.name.endswith(".pdf")
+        assert saved.exists()
+
+    @respx.mock
+    async def test_filename_traversal_is_sanitized(self, tmp_path) -> None:
+        pdf_url = "https://example.com/a.pdf"
+        respx.get(pdf_url).mock(
+            return_value=Response(
+                200, content=b"%PDF-1.4\n", headers={"content-type": "application/pdf"}
+            )
+        )
+
+        result = await download_subscription_pdf(
+            save_dir=str(tmp_path),
+            pblanc_url=pdf_url,
+            filename="../../../etc/passwd",
+        )
+
+        saved = Path(result["saved_path"])
+        # 경로 traversal 가 모두 제거되어야 함 — 결과 파일은 save_dir 안에 있어야 함
+        assert saved.parent == tmp_path.resolve()
+        assert "/" not in saved.name
+        assert ".." not in saved.name
+
+    @respx.mock
+    async def test_overwrite_false_uses_numeric_suffix(self, tmp_path) -> None:
+        pdf_url = "https://example.com/a.pdf"
+        respx.get(pdf_url).mock(
+            return_value=Response(
+                200, content=b"%PDF-1.4\nv1", headers={"content-type": "application/pdf"}
+            )
+        )
+
+        # 첫 번째 호출 — 평범한 이름
+        first = await download_subscription_pdf(
+            save_dir=str(tmp_path), pblanc_url=pdf_url, filename="notice.pdf"
+        )
+        # 두 번째 호출 — 같은 이름. overwrite=False (기본) → suffix 추가
+        respx.get(pdf_url).mock(
+            return_value=Response(
+                200, content=b"%PDF-1.4\nv2", headers={"content-type": "application/pdf"}
+            )
+        )
+        second = await download_subscription_pdf(
+            save_dir=str(tmp_path), pblanc_url=pdf_url, filename="notice.pdf"
+        )
+
+        assert Path(first["saved_path"]).name == "notice.pdf"
+        assert Path(second["saved_path"]).name == "notice_01.pdf"
+        assert second["overwrote"] is False
+        assert Path(second["saved_path"]).read_bytes() == b"%PDF-1.4\nv2"
+
+    @respx.mock
+    async def test_overwrite_true_replaces_existing_file(self, tmp_path) -> None:
+        pdf_url = "https://example.com/a.pdf"
+        respx.get(pdf_url).mock(
+            return_value=Response(
+                200, content=b"%PDF-1.4\nold", headers={"content-type": "application/pdf"}
+            )
+        )
+        await download_subscription_pdf(
+            save_dir=str(tmp_path), pblanc_url=pdf_url, filename="notice.pdf"
+        )
+
+        respx.get(pdf_url).mock(
+            return_value=Response(
+                200,
+                content=b"%PDF-1.4\nfresh",
+                headers={"content-type": "application/pdf"},
+            )
+        )
+        result = await download_subscription_pdf(
+            save_dir=str(tmp_path),
+            pblanc_url=pdf_url,
+            filename="notice.pdf",
+            overwrite=True,
+        )
+
+        assert Path(result["saved_path"]).name == "notice.pdf"
+        assert result["overwrote"] is True
+        assert Path(result["saved_path"]).read_bytes() == b"%PDF-1.4\nfresh"
+
+    @respx.mock
+    async def test_save_dir_auto_created(self, tmp_path) -> None:
+        pdf_url = "https://example.com/a.pdf"
+        respx.get(pdf_url).mock(
+            return_value=Response(
+                200, content=b"%PDF-1.4\n", headers={"content-type": "application/pdf"}
+            )
+        )
+
+        target_dir = tmp_path / "nested" / "subdir"
+        assert not target_dir.exists()
+
+        result = await download_subscription_pdf(save_dir=str(target_dir), pblanc_url=pdf_url)
+
+        assert "error" not in result
+        assert target_dir.exists()
+        assert Path(result["saved_path"]).parent == target_dir.resolve()
+
+    def test_build_default_filename_with_full_metadata(self) -> None:
+        name = _build_default_filename("더샵 인테그리티", "2024000123")
+        assert name == "더샵_인테그리티_2024000123.pdf"
+
+    def test_build_default_filename_with_no_metadata(self) -> None:
+        name = _build_default_filename(None, None)
+        assert name == "subscription_notice.pdf"
 
 
 class TestGetAptSubscriptionResults:

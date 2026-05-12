@@ -22,6 +22,9 @@ from real_estate.mcp_server._helpers import (
     _download_pdf,
     _fetch_json,
     _get_odcloud_key,
+    _next_available_path,
+    _resolve_save_dir,
+    _sanitize_filename_component,
     _validate_pblanc_date,
     _validate_year_month,
 )
@@ -320,6 +323,156 @@ async def get_apt_subscription_supply_prices(
         "supply_prices": [_supply_price_to_dict(p) for p in prices],
         "sample_count": len(prices),
         "extracted_at": _dt.datetime.now(_dt.UTC).isoformat(),
+    }
+
+
+def _build_default_filename(house_name: str | None, house_manage_no: str | None) -> str:
+    """Build a safe default filename from notice metadata."""
+    parts: list[str] = []
+    if house_name:
+        parts.append(_sanitize_filename_component(house_name))
+    if house_manage_no:
+        parts.append(_sanitize_filename_component(house_manage_no))
+    if not parts:
+        parts.append("subscription_notice")
+    return "_".join(parts) + ".pdf"
+
+
+@mcp.tool()
+async def download_subscription_pdf(
+    save_dir: str,
+    house_manage_no: str | None = None,
+    pblanc_url: str | None = None,
+    filename: str | None = None,
+    overwrite: bool = False,
+) -> dict[str, Any]:
+    """Download a 청약 공고 (subscription notice) PDF to a local directory.
+
+    Korean keywords: 청약 공고 PDF 다운로드, 분양 공고 저장, PDF 받기
+
+    Use this tool when the user asks:
+      - "이 단지 공고 PDF 를 ~/Downloads 에 저장해줘"
+      - "분양 공고 원본 PDF 좀 받아줘"
+      - "PDF를 /Users/me/notices/ 폴더에 저장"
+
+    IMPORTANT — interactive flow:
+      If the user has not specified `save_dir`, DO NOT pick a default
+      silently. First ask them where to save it in plain Korean, e.g.
+      "어디에 저장할까요? 예: ~/Downloads 또는 직접 경로 입력". After the
+      user confirms, call this tool with the chosen path. The same applies
+      to ambiguous filenames — confirm before calling rather than guessing.
+
+    Provide either `house_manage_no` (the tool looks up PBLANC_URL via
+    get_apt_subscription_info) OR a direct `pblanc_url`. The tool downloads
+    the PDF (15s timeout, 25 MB cap, PDF magic-byte check) and writes it to
+    the requested directory.
+
+    Path safety:
+      - `save_dir` may contain `~` (expanded to the home directory) and is
+        resolved to an absolute path.
+      - The directory is created automatically (`mkdir -p` semantics).
+      - `filename` is sanitised to remove `/`, `\\`, `..`, and other unsafe
+        characters; whitespace is collapsed to `_`. Use this instead of
+        embedding a path in `filename`.
+      - When `overwrite=False` (default) and the target file already exists,
+        a numeric suffix (`_01`, `_02`, ...) is appended to keep both files.
+
+    Authentication:
+      - ODCLOUD_API_KEY or ODCLOUD_SERVICE_KEY only when `house_manage_no`
+        is used (for the lookup step). Direct `pblanc_url` does not require
+        odcloud credentials.
+
+    Args:
+        save_dir: Target directory (e.g. "~/Downloads", "/Users/me/notices").
+        house_manage_no: 주택관리번호 (HOUSE_MANAGE_NO).
+        pblanc_url: Direct URL to the notice PDF.
+        filename: Optional file name (no path). Defaults to
+            "{HOUSE_NM}_{HOUSE_MANAGE_NO}.pdf" when looked up, or a fallback.
+        overwrite: When True, overwrite an existing file; otherwise append a
+            numeric suffix.
+
+    Returns:
+        house_name: 단지명 (HOUSE_NM) — only when looked up via house_manage_no.
+        house_manage_no: input echo.
+        source_pdf_url: actual PDF URL.
+        saved_path: absolute path of the written file.
+        file_size_bytes: written PDF size in bytes.
+        overwrote: True if an existing file was replaced; False otherwise.
+        downloaded_at: ISO-8601 UTC timestamp.
+        error/message: present on validation/lookup/download failure.
+    """
+    if not save_dir:
+        return {"error": "validation_error", "message": "save_dir is required."}
+    if not house_manage_no and not pblanc_url:
+        return {
+            "error": "validation_error",
+            "message": "Provide either house_manage_no or pblanc_url.",
+        }
+    if filename is not None and not filename.strip():
+        return {
+            "error": "validation_error",
+            "message": "filename must be a non-empty string when provided.",
+        }
+
+    house_name: str | None = None
+    source_url = pblanc_url
+
+    if not source_url:
+        err = _check_odcloud_key()
+        if err:
+            return err
+        assert house_manage_no is not None
+        lookup = await _lookup_notice_by_house_manage_no(house_manage_no)
+        if "error" in lookup:
+            return lookup["error"]
+        notice = lookup["item"]
+        source_url = (notice.get("PBLANC_URL") or "").strip() or None
+        if not source_url:
+            return {
+                "error": "not_found",
+                "message": "PBLANC_URL is not available in the lookup result.",
+                "house_manage_no": house_manage_no,
+            }
+        house_name = notice.get("HOUSE_NM") or None
+
+    assert source_url is not None
+    body, err = await _download_pdf(source_url)
+    if err:
+        return {**err, "source_pdf_url": source_url}
+
+    try:
+        directory = _resolve_save_dir(save_dir)
+        directory.mkdir(parents=True, exist_ok=True)
+    except OSError as exc:
+        return {
+            "error": "validation_error",
+            "message": f"Failed to prepare save_dir: {exc}",
+        }
+
+    raw_name = filename if filename else _build_default_filename(house_name, house_manage_no)
+    safe_name = _sanitize_filename_component(raw_name)
+    if not safe_name.lower().endswith(".pdf"):
+        safe_name += ".pdf"
+    target = directory / safe_name
+
+    overwrote = False
+    if target.exists():
+        if overwrite:
+            overwrote = True
+        else:
+            target = _next_available_path(target)
+
+    assert body is not None
+    target.write_bytes(body)
+
+    return {
+        "house_name": house_name,
+        "house_manage_no": house_manage_no,
+        "source_pdf_url": source_url,
+        "saved_path": str(target),
+        "file_size_bytes": len(body),
+        "overwrote": overwrote,
+        "downloaded_at": _dt.datetime.now(_dt.UTC).isoformat(),
     }
 
 

@@ -7,6 +7,7 @@ import os
 import re
 import statistics
 import urllib.parse
+from pathlib import Path
 from typing import Any
 
 import httpx
@@ -132,6 +133,36 @@ async def _fetch_json(
 
 
 _MAX_PDF_BYTES = 25 * 1024 * 1024
+
+_FILENAME_UNSAFE_RE = re.compile(r"[\\/\x00:*?\"<>|]")
+
+
+def _sanitize_filename_component(name: str) -> str:
+    """Strip path separators and unsafe characters from a filename component."""
+    cleaned = _FILENAME_UNSAFE_RE.sub("", name)
+    cleaned = cleaned.replace("..", "")
+    cleaned = cleaned.strip(" .")
+    cleaned = re.sub(r"\s+", "_", cleaned)
+    return cleaned or "notice"
+
+
+def _resolve_save_dir(save_dir: str) -> Path:
+    """Expand ~ and resolve to an absolute path. Does not create the directory."""
+    return Path(save_dir).expanduser().resolve()
+
+
+def _next_available_path(target: Path) -> Path:
+    """Return target if it does not exist, else target with a numeric suffix."""
+    if not target.exists():
+        return target
+    stem = target.stem
+    suffix = target.suffix
+    parent = target.parent
+    for index in range(1, 1000):
+        candidate = parent / f"{stem}_{index:02d}{suffix}"
+        if not candidate.exists():
+            return candidate
+    raise FileExistsError(f"Could not find an unused filename for {target}.")
 
 
 async def _download_pdf(

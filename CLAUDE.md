@@ -65,6 +65,7 @@ MCP tools are spread across modules under [src/real_estate/mcp_server/](src/real
 - `get_apt_subscription_info` / `get_apt_subscription_results` — APT 청약 from `api.odcloud.kr`
   - `get_apt_subscription_info` supports `rcrit_pblanc_de_from/_to` (YYYY-MM-DD), `mvn_prearnge_ym_from` (YYYYMM), and `only_pending_occupancy` filters. Items are enriched with `is_pre_occupancy` and `expected_move_in_year_month` derived fields.
 - `get_apt_subscription_supply_prices` — extracts 평형별 분양가 from 청약 공고 PDF using `pdfplumber` (table-first, regex fallback). Accepts `house_manage_no` (looks up PBLANC_URL via odcloud) or a direct `pblanc_url`.
+- `download_subscription_pdf` — saves the notice PDF to a user-specified local directory (Claude Desktop stdio mode). Guards: filename traversal sanitisation, auto-`mkdir -p`, numeric suffix on collision (`overwrite=False` default). The tool's docstring asks the LLM to confirm `save_dir` with the user before calling.
 - `get_public_auction_items` — onbid 공매 bid results from `apis.data.go.kr/B010003`
 - `get_onbid_thing_info_list` — onbid item list from `openapi.onbid.co.kr`
 - `get_onbid_*_code_info` / `get_onbid_addr*_info` — onbid code/address lookup from `openapi.onbid.co.kr`

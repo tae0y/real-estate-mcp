@@ -3,13 +3,25 @@
 HTTP calls are mocked with respx so the real API is never called.
 """
 
+import urllib.parse
+from unittest.mock import patch
+
 import pytest
 import respx
 from httpx import Response
 
+from real_estate.common_utils.pdf_parser import SupplyPrice
+from real_estate.mcp_server._helpers import (
+    _current_year_month,
+    _validate_pblanc_date,
+    _validate_year_month,
+)
 from real_estate.mcp_server.tools.subscription import (
+    _annotate_pre_occupancy,
+    _normalize_year_month,
     get_apt_subscription_info,
     get_apt_subscription_results,
+    get_apt_subscription_supply_prices,
 )
 
 _INFO_URL = "https://api.odcloud.kr/api/15101046/v1/uddi:14a46595-03dd-47d3-a418-d64e52820598"
@@ -97,6 +109,306 @@ class TestGetAptSubscriptionInfo:
 
         assert "error" not in result
         assert result["total_count"] == 0
+
+    @respx.mock
+    async def test_enriches_items_with_pre_occupancy_fields(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setattr(
+            "real_estate.mcp_server.tools.subscription._current_year_month",
+            lambda: "202605",
+        )
+        payload = {
+            "currentCount": 2,
+            "data": [
+                {"HOUSE_NM": "future", "MVN_PREARNGE_YM": "202712"},
+                {"HOUSE_NM": "past", "MVN_PREARNGE_YM": "202209"},
+            ],
+            "matchCount": 2,
+            "page": 1,
+            "perPage": 100,
+            "totalCount": 2,
+        }
+        respx.get(_INFO_URL).mock(return_value=Response(200, json=payload))
+
+        result = await get_apt_subscription_info()
+
+        assert result["items"][0]["is_pre_occupancy"] is True
+        assert result["items"][0]["expected_move_in_year_month"] == "2027-12"
+        assert result["items"][1]["is_pre_occupancy"] is False
+        assert result["items"][1]["expected_move_in_year_month"] == "2022-09"
+
+    @respx.mock
+    async def test_date_range_filter_passed_to_api(self) -> None:
+        payload = {
+            "currentCount": 0,
+            "data": [],
+            "matchCount": 0,
+            "page": 1,
+            "perPage": 100,
+            "totalCount": 0,
+        }
+        route = respx.get(_INFO_URL).mock(return_value=Response(200, json=payload))
+
+        await get_apt_subscription_info(
+            rcrit_pblanc_de_from="2021-01-01",
+            rcrit_pblanc_de_to="2021-07-31",
+        )
+
+        assert route.called
+        query = dict(urllib.parse.parse_qsl(route.calls[0].request.url.query.decode()))
+        assert query["cond[RCRIT_PBLANC_DE::GTE]"] == "2021-01-01"
+        assert query["cond[RCRIT_PBLANC_DE::LTE]"] == "2021-07-31"
+
+    async def test_invalid_date_format_rejected(self) -> None:
+        result = await get_apt_subscription_info(rcrit_pblanc_de_from="2021/07/01")
+        assert result["error"] == "validation_error"
+
+    async def test_from_after_to_rejected(self) -> None:
+        result = await get_apt_subscription_info(
+            rcrit_pblanc_de_from="2024-01-01",
+            rcrit_pblanc_de_to="2021-07-01",
+        )
+        assert result["error"] == "validation_error"
+
+    async def test_invalid_year_month_rejected(self) -> None:
+        result = await get_apt_subscription_info(mvn_prearnge_ym_from="202113")
+        assert result["error"] == "validation_error"
+
+    @respx.mock
+    async def test_only_pending_occupancy_uses_current_month(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setattr(
+            "real_estate.mcp_server.tools.subscription._current_year_month",
+            lambda: "202605",
+        )
+        payload = {
+            "currentCount": 0,
+            "data": [],
+            "matchCount": 0,
+            "page": 1,
+            "perPage": 100,
+            "totalCount": 0,
+        }
+        route = respx.get(_INFO_URL).mock(return_value=Response(200, json=payload))
+
+        result = await get_apt_subscription_info(only_pending_occupancy=True)
+
+        query = dict(urllib.parse.parse_qsl(route.calls[0].request.url.query.decode()))
+        assert query["cond[MVN_PREARNGE_YM::GTE]"] == "202605"
+        assert result["applied_filters"]["only_pending_occupancy"] is True
+        assert result["applied_filters"]["mvn_prearnge_ym_from"] == "202605"
+
+    @respx.mock
+    async def test_only_pending_prefers_stricter_bound(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setattr(
+            "real_estate.mcp_server.tools.subscription._current_year_month",
+            lambda: "202605",
+        )
+        payload = {
+            "currentCount": 0,
+            "data": [],
+            "matchCount": 0,
+            "page": 1,
+            "perPage": 100,
+            "totalCount": 0,
+        }
+        route = respx.get(_INFO_URL).mock(return_value=Response(200, json=payload))
+
+        await get_apt_subscription_info(
+            mvn_prearnge_ym_from="202401", only_pending_occupancy=True
+        )
+
+        query = dict(urllib.parse.parse_qsl(route.calls[0].request.url.query.decode()))
+        # Current month (202605) > 202401 → current wins.
+        assert query["cond[MVN_PREARNGE_YM::GTE]"] == "202605"
+
+
+class TestSubscriptionPureHelpers:
+    """Pure helper unit tests (no HTTP)."""
+
+    def test_pblanc_date_accepts_valid(self) -> None:
+        assert _validate_pblanc_date("2021-07-31", "f") is None
+
+    def test_pblanc_date_rejects_bad_format(self) -> None:
+        err = _validate_pblanc_date("2021/07/31", "f")
+        assert err is not None and err["error"] == "validation_error"
+
+    def test_pblanc_date_rejects_invalid_calendar(self) -> None:
+        err = _validate_pblanc_date("2021-02-30", "f")
+        assert err is not None
+
+    def test_year_month_accepts_valid(self) -> None:
+        assert _validate_year_month("202107", "f") is None
+
+    def test_year_month_rejects_month_zero(self) -> None:
+        err = _validate_year_month("202100", "f")
+        assert err is not None
+
+    def test_year_month_rejects_short(self) -> None:
+        err = _validate_year_month("20210", "f")
+        assert err is not None
+
+    def test_annotate_marks_future_as_pending(self) -> None:
+        item = _annotate_pre_occupancy({"MVN_PREARNGE_YM": "299912"}, "202605")
+        assert item["is_pre_occupancy"] is True
+        assert item["expected_move_in_year_month"] == "2999-12"
+
+    def test_annotate_marks_past_as_not_pending(self) -> None:
+        item = _annotate_pre_occupancy({"MVN_PREARNGE_YM": "202001"}, "202605")
+        assert item["is_pre_occupancy"] is False
+
+    def test_annotate_no_field_leaves_item_alone(self) -> None:
+        item = _annotate_pre_occupancy({"HOUSE_NM": "x"}, "202605")
+        assert "is_pre_occupancy" not in item
+
+    def test_annotate_non_yyyymm_falls_back_to_raw(self) -> None:
+        item = _annotate_pre_occupancy({"MVN_PREARNGE_YM": "미정"}, "202605")
+        assert item["expected_move_in_year_month"] == "미정"
+
+    def test_normalize_year_month_converts_six_digit(self) -> None:
+        assert _normalize_year_month("202107") == "2021-07"
+
+    def test_normalize_year_month_returns_none_for_non_digit(self) -> None:
+        assert _normalize_year_month("미정") is None
+
+    def test_current_year_month_shape(self) -> None:
+        ym = _current_year_month()
+        assert len(ym) == 6 and ym.isdigit()
+        assert 1 <= int(ym[4:]) <= 12
+
+
+class TestGetAptSubscriptionSupplyPrices:
+    """Integration tests for get_apt_subscription_supply_prices."""
+
+    @pytest.fixture(autouse=True)
+    def set_api_key(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setenv("ODCLOUD_API_KEY", "test-odcloud-key")
+        monkeypatch.delenv("ODCLOUD_SERVICE_KEY", raising=False)
+        monkeypatch.delenv("DATA_GO_KR_API_KEY", raising=False)
+
+    async def test_missing_inputs_returns_validation_error(self) -> None:
+        result = await get_apt_subscription_supply_prices()
+        assert result["error"] == "validation_error"
+
+    @respx.mock
+    async def test_pblanc_url_success_returns_supply_prices(self) -> None:
+        pdf_url = "https://example.com/notice.pdf"
+        pdf_bytes = b"%PDF-1.4\n%fake test pdf body"
+        respx.get(pdf_url).mock(
+            return_value=Response(
+                200, content=pdf_bytes, headers={"content-type": "application/pdf"}
+            )
+        )
+
+        fake_prices = [
+            SupplyPrice("84A", 84.9123, 78500, 3),
+            SupplyPrice("59B", 59.5421, 56000, 3),
+        ]
+        with patch(
+            "real_estate.mcp_server.tools.subscription.extract_supply_prices",
+            return_value=fake_prices,
+        ):
+            result = await get_apt_subscription_supply_prices(pblanc_url=pdf_url)
+
+        assert "error" not in result
+        assert result["source_pdf_url"] == pdf_url
+        assert result["sample_count"] == 2
+        assert result["supply_prices"][0] == {
+            "unit_type": "84A",
+            "exclusive_area_sqm": 84.9123,
+            "supply_amount_10k": 78500,
+            "source_page": 3,
+        }
+        assert result["house_name"] is None  # not looked up
+        assert "extracted_at" in result
+
+    @respx.mock
+    async def test_house_manage_no_lookup_then_download(self) -> None:
+        lookup_payload = {
+            "currentCount": 1,
+            "data": [
+                {
+                    "HOUSE_MANAGE_NO": "2024000123",
+                    "HOUSE_NM": "더샵 인테그리티",
+                    "PBLANC_URL": "https://example.com/notice.pdf",
+                }
+            ],
+            "matchCount": 1,
+            "page": 1,
+            "perPage": 1,
+            "totalCount": 1,
+        }
+        respx.get(_INFO_URL).mock(return_value=Response(200, json=lookup_payload))
+        pdf_bytes = b"%PDF-1.4\n%fake"
+        respx.get("https://example.com/notice.pdf").mock(
+            return_value=Response(
+                200, content=pdf_bytes, headers={"content-type": "application/pdf"}
+            )
+        )
+
+        with patch(
+            "real_estate.mcp_server.tools.subscription.extract_supply_prices",
+            return_value=[SupplyPrice("84A", 84.9123, 78500, 3)],
+        ):
+            result = await get_apt_subscription_supply_prices(house_manage_no="2024000123")
+
+        assert result["house_name"] == "더샵 인테그리티"
+        assert result["house_manage_no"] == "2024000123"
+        assert result["sample_count"] == 1
+
+    @respx.mock
+    async def test_lookup_not_found_returns_not_found(self) -> None:
+        respx.get(_INFO_URL).mock(
+            return_value=Response(
+                200,
+                json={
+                    "currentCount": 0,
+                    "data": [],
+                    "matchCount": 0,
+                    "page": 1,
+                    "perPage": 1,
+                    "totalCount": 0,
+                },
+            )
+        )
+
+        result = await get_apt_subscription_supply_prices(house_manage_no="9999999999")
+        assert result["error"] == "not_found"
+
+    @respx.mock
+    async def test_pdf_download_rejects_non_pdf_content(self) -> None:
+        pdf_url = "https://example.com/not-a-pdf.html"
+        respx.get(pdf_url).mock(
+            return_value=Response(
+                200, content=b"<html>nope</html>", headers={"content-type": "text/html"}
+            )
+        )
+
+        result = await get_apt_subscription_supply_prices(pblanc_url=pdf_url)
+        assert result["error"] == "parse_error"
+        assert result["source_pdf_url"] == pdf_url
+
+    @respx.mock
+    async def test_parse_error_is_surfaced(self) -> None:
+        pdf_url = "https://example.com/notice.pdf"
+        respx.get(pdf_url).mock(
+            return_value=Response(
+                200, content=b"%PDF-1.4\n", headers={"content-type": "application/pdf"}
+            )
+        )
+
+        with patch(
+            "real_estate.mcp_server.tools.subscription.extract_supply_prices",
+            side_effect=ValueError("OCR may be required: scanned PDF detected"),
+        ):
+            result = await get_apt_subscription_supply_prices(pblanc_url=pdf_url)
+
+        assert result["error"] == "parse_error"
+        assert "OCR" in result["message"]
 
 
 class TestGetAptSubscriptionResults:

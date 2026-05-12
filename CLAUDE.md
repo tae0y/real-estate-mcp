@@ -63,6 +63,8 @@ MCP tools are spread across modules under [src/real_estate/mcp_server/](src/real
 
 **Additional tool groups (beyond trade/rent):**
 - `get_apt_subscription_info` / `get_apt_subscription_results` — APT 청약 from `api.odcloud.kr`
+  - `get_apt_subscription_info` supports `rcrit_pblanc_de_from/_to` (YYYY-MM-DD), `mvn_prearnge_ym_from` (YYYYMM), and `only_pending_occupancy` filters. Items are enriched with `is_pre_occupancy` and `expected_move_in_year_month` derived fields.
+- `get_apt_subscription_supply_prices` — extracts 평형별 분양가 from 청약 공고 PDF using `pdfplumber` (table-first, regex fallback). Accepts `house_manage_no` (looks up PBLANC_URL via odcloud) or a direct `pblanc_url`.
 - `get_public_auction_items` — onbid 공매 bid results from `apis.data.go.kr/B010003`
 - `get_onbid_thing_info_list` — onbid item list from `openapi.onbid.co.kr`
 - `get_onbid_*_code_info` / `get_onbid_addr*_info` — onbid code/address lookup from `openapi.onbid.co.kr`
@@ -81,6 +83,7 @@ All URL constants (`_ONBID_*`, `_ODCLOUD_*`, etc.) are defined in `_helpers.py`.
 
 **Utility modules** ([src/real_estate/common_utils/](src/real_estate/common_utils/)) — standalone CLI tools, not part of MCP:
 - `docx_parser.py` / `hwp_parser.py` — extract text from .docx/.hwp files
+- `pdf_parser.py` — extract text and 평형별 공급금액 (`SupplyPrice`) from PDF via `pdfplumber`. Used by `get_apt_subscription_supply_prices`. Guards: 25 MB / 200 pages / OCR-required detection.
 - `opendata_bulk_collector.py` — CLI to collect monthly apartment rent snapshots into JSON
 
 **`get_current_year_month` tool** (in `server.py`, not in `tools/`):

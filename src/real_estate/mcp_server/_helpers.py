@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import datetime as _dt
 import os
+import re
 import statistics
 import urllib.parse
 from typing import Any
@@ -127,6 +129,55 @@ async def _fetch_json(
         return None, {"error": "parse_error", "message": f"JSON parse failed: {exc}"}
     except httpx.RequestError as exc:
         return None, {"error": "network_error", "message": f"Network error: {exc}"}
+
+
+_MAX_PDF_BYTES = 25 * 1024 * 1024
+
+
+async def _download_pdf(
+    url: str,
+    *,
+    max_bytes: int = _MAX_PDF_BYTES,
+) -> tuple[bytes | None, dict[str, Any] | None]:
+    """Download a PDF over HTTPS with a size cap. Returns (body, error_dict)."""
+    try:
+        async with httpx.AsyncClient(timeout=15.0, follow_redirects=True) as client:
+            async with client.stream("GET", url) as response:
+                response.raise_for_status()
+                content_type = response.headers.get("content-type", "").lower()
+                buffer = bytearray()
+                async for chunk in response.aiter_bytes():
+                    buffer.extend(chunk)
+                    if len(buffer) > max_bytes:
+                        return None, {
+                            "error": "validation_error",
+                            "message": f"PDF exceeds size cap ({max_bytes} bytes).",
+                        }
+                if not buffer:
+                    return None, {
+                        "error": "network_error",
+                        "message": "Empty response body for PDF download.",
+                    }
+                # Sniff PDF magic header (lenient — some servers send octet-stream).
+                head = bytes(buffer[:5])
+                if head[:4] != b"%PDF" and "pdf" not in content_type:
+                    return None, {
+                        "error": "parse_error",
+                        "message": (
+                            f"Response does not look like a PDF "
+                            f"(content_type={content_type!r}, head={head!r})."
+                        ),
+                    }
+                return bytes(buffer), None
+    except httpx.TimeoutException:
+        return None, {"error": "network_error", "message": "PDF download timed out (15s)."}
+    except httpx.HTTPStatusError as exc:
+        return None, {
+            "error": "network_error",
+            "message": f"PDF download HTTP error: {exc.response.status_code}",
+        }
+    except httpx.RequestError as exc:
+        return None, {"error": "network_error", "message": f"PDF download network error: {exc}"}
 
 
 # ---------------------------------------------------------------------------
@@ -303,6 +354,53 @@ def _api_error_response(error_code: str) -> dict[str, Any]:
     """Build a standardised API error response dict."""
     msg = _ERROR_MESSAGES.get(error_code, f"API error code: {error_code}")
     return {"error": "api_error", "code": error_code, "message": msg}
+
+
+# ---------------------------------------------------------------------------
+# Date / year-month helpers
+# ---------------------------------------------------------------------------
+
+_PBLANC_DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+_YEAR_MONTH_RE = re.compile(r"^\d{6}$")
+
+
+def _current_year_month() -> str:
+    """Return the current UTC year-month as YYYYMM."""
+    now = _dt.datetime.now(_dt.UTC)
+    return f"{now.year:04d}{now.month:02d}"
+
+
+def _validate_pblanc_date(value: str, field: str) -> dict[str, Any] | None:
+    """Validate a YYYY-MM-DD date string. Returns error dict or None."""
+    if not _PBLANC_DATE_RE.match(value):
+        return {
+            "error": "validation_error",
+            "message": f"{field} must be in YYYY-MM-DD format (got {value!r}).",
+        }
+    try:
+        _dt.date.fromisoformat(value)
+    except ValueError:
+        return {
+            "error": "validation_error",
+            "message": f"{field} is not a valid calendar date (got {value!r}).",
+        }
+    return None
+
+
+def _validate_year_month(value: str, field: str) -> dict[str, Any] | None:
+    """Validate a YYYYMM string. Returns error dict or None."""
+    if not _YEAR_MONTH_RE.match(value):
+        return {
+            "error": "validation_error",
+            "message": f"{field} must be in YYYYMM format (got {value!r}).",
+        }
+    month = int(value[4:])
+    if not 1 <= month <= 12:
+        return {
+            "error": "validation_error",
+            "message": f"{field} month must be 01..12 (got {value!r}).",
+        }
+    return None
 
 
 # ---------------------------------------------------------------------------

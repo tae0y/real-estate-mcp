@@ -8,6 +8,7 @@ from real_estate.mcp_server import server
 
 def test_main_http_defaults_to_localhost(monkeypatch: Any) -> None:
     monkeypatch.setattr(sys, "argv", ["server", "--transport", "http"])
+    monkeypatch.delenv("FORWARDED_ALLOW_IPS", raising=False)
 
     calls: list[dict[str, Any]] = []
 

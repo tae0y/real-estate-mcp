@@ -30,26 +30,6 @@ _APT_SUBSCRIPTION_INFO_PATH = "/15101046/v1/uddi:14a46595-03dd-47d3-a418-d64e528
 
 _APPLYHOME_STAT_BASE_URL = "https://api.odcloud.kr/api/ApplyhomeStatSvc/v1"
 
-_ONBID_BID_RESULT_LIST_URL = (
-    "http://apis.data.go.kr/B010003/OnbidCltrBidRsltListSrvc/getCltrBidRsltList"
-)
-_ONBID_BID_RESULT_DETAIL_URL = (
-    "http://apis.data.go.kr/B010003/OnbidCltrBidRsltDtlSrvc/getCltrBidRsltDtl"
-)
-
-_ONBID_THING_INFO_LIST_URL = (
-    "http://openapi.onbid.co.kr/openapi/services/ThingInfoInquireSvc/getUnifyUsageCltr"
-)
-
-_ONBID_CODE_INFO_BASE_URL = "http://openapi.onbid.co.kr/openapi/services/OnbidCodeInfoInquireSvc"
-_ONBID_CODE_TOP_URL = f"{_ONBID_CODE_INFO_BASE_URL}/getOnbidTopCodeInfo"
-_ONBID_CODE_MIDDLE_URL = f"{_ONBID_CODE_INFO_BASE_URL}/getOnbidMiddleCodeInfo"
-_ONBID_CODE_BOTTOM_URL = f"{_ONBID_CODE_INFO_BASE_URL}/getOnbidBottomCodeInfo"
-_ONBID_ADDR1_URL = f"{_ONBID_CODE_INFO_BASE_URL}/getOnbidAddr1Info"
-_ONBID_ADDR2_URL = f"{_ONBID_CODE_INFO_BASE_URL}/getOnbidAddr2Info"
-_ONBID_ADDR3_URL = f"{_ONBID_CODE_INFO_BASE_URL}/getOnbidAddr3Info"
-_ONBID_DTL_ADDR_URL = f"{_ONBID_CODE_INFO_BASE_URL}/getOnbidDtlAddrInfo"
-
 _ERROR_MESSAGES: dict[str, str] = {
     "03": "No trade records found for the specified region and period.",
     "10": "Invalid API request parameters.",
@@ -57,19 +37,6 @@ _ERROR_MESSAGES: dict[str, str] = {
     "30": "Unregistered API key.",
     "31": "API key has expired.",
 }
-
-# ---------------------------------------------------------------------------
-# URL builders
-# ---------------------------------------------------------------------------
-
-
-def _build_url_with_service_key(base: str, service_key: str, params: dict[str, Any]) -> str:
-    """Build a URL with a URL-encoded serviceKey embedded directly in the string."""
-    encoded_key = urllib.parse.quote(service_key, safe="")
-    encoded_params = urllib.parse.urlencode(params, doseq=True)
-    if encoded_params:
-        return f"{base}?serviceKey={encoded_key}&{encoded_params}"
-    return f"{base}?serviceKey={encoded_key}"
 
 
 def _build_url(base: str, region_code: str, year_month: str, num_of_rows: int) -> str:
@@ -144,21 +111,6 @@ def _check_api_key() -> dict[str, Any] | None:
     return None
 
 
-def _get_data_go_kr_key_for_onbid() -> str:
-    """Return the service key to use for Onbid APIs."""
-    return os.getenv("ONBID_API_KEY", "") or os.getenv("DATA_GO_KR_API_KEY", "")
-
-
-def _check_onbid_api_key() -> dict[str, Any] | None:
-    """Return an error dict if Onbid API key is not set, else None."""
-    if not _get_data_go_kr_key_for_onbid():
-        return {
-            "error": "config_error",
-            "message": "Environment variable ONBID_API_KEY (or DATA_GO_KR_API_KEY) is not set.",
-        }
-    return None
-
-
 def _get_odcloud_key() -> tuple[str, str]:
     """Return (mode, key) for odcloud authentication."""
     api_key = os.getenv("ODCLOUD_API_KEY", "")
@@ -199,18 +151,6 @@ def _get_total_count(root: Any) -> int:
         return int(root.findtext(".//totalCount") or "0")
     except ValueError:
         return 0
-
-
-def _get_total_count_onbid(root: Any) -> int:
-    """Extract total count from an Onbid ThingInfoInquireSvc XML response."""
-    for tag in ("TotalCount", "totalCount", "totalcount"):
-        raw = root.findtext(f".//{tag}")
-        if raw:
-            try:
-                return int(raw)
-            except ValueError:
-                return 0
-    return 0
 
 
 def _txt(item: Any, tag: str) -> str:
@@ -379,45 +319,4 @@ async def _run_molit_xml_tool(
         "total_count": _get_total_count(root),
         "items": items,
         "summary": summary_builder(items),
-    }
-
-
-async def _run_onbid_code_info_tool(
-    endpoint_url: str,
-    params: dict[str, Any],
-) -> dict[str, Any]:
-    """Fetch and parse an OnbidCodeInfoInquireSvc response."""
-    from real_estate.mcp_server.parsers.onbid import _parse_onbid_code_info_xml
-
-    err = _check_onbid_api_key()
-    if err:
-        return err
-
-    page_no = int(params.get("pageNo") or 1)
-    num_of_rows = int(params.get("numOfRows") or 10)
-
-    service_key = _get_data_go_kr_key_for_onbid()
-    url = _build_url_with_service_key(endpoint_url, service_key, params)
-    xml_text, fetch_err = await _fetch_xml(url)
-    if fetch_err:
-        return fetch_err
-    assert xml_text is not None
-
-    try:
-        items, total_count, error_code, error_message = _parse_onbid_code_info_xml(xml_text)
-    except XmlParseError as exc:
-        return {"error": "parse_error", "message": f"XML parse failed: {exc}"}
-
-    if error_code is not None:
-        return {
-            "error": "api_error",
-            "code": error_code,
-            "message": error_message or "Onbid API error",
-        }
-
-    return {
-        "total_count": total_count,
-        "items": items,
-        "page_no": page_no,
-        "num_of_rows": num_of_rows,
     }

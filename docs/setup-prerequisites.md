@@ -17,7 +17,6 @@ This page describes what you need before connecting the real estate MCP server t
    |----------|---------|
    | `ODCLOUD_API_KEY` | Applyhome (청약홈) Authorization header |
    | `ODCLOUD_SERVICE_KEY` | Applyhome query param |
-   | ~~`ONBID_API_KEY`~~ | ~~Onbid (openapi.onbid.co.kr)~~ — removed June 1, 2026 |
 
 ## Install uv
 

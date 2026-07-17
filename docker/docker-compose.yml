@@ -1,15 +1,6 @@
 name: real-estate-mcp
 
 services:
-  auth:
-    build:
-      context: ..
-      dockerfile: docker/Dockerfile.auth
-    env_file: ../.env
-    networks:
-      - internal
-    restart: unless-stopped
-
   mcp:
     build:
       context: ..

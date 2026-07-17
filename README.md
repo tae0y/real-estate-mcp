@@ -8,8 +8,6 @@ Provides 14+ tools for live transaction data and financial calculations — apar
 > [!WARNING]
 > **Deprecation Notice — effective June 1, 2026**
 >
-> **ChatGPT support** will be removed. The required OAuth flow (Auth0 + PKCE + DCR) is too complex to maintain as a personal project and will be re-evaluated for a future release.
->
 > **Caddy reverse proxy** support will be removed. Cloudflare Tunnel is the recommended replacement and is already available in `docker/docker-compose.yml` via `--profile cloudflare`. See [docs/setup-reverse-proxy.md](docs/setup-reverse-proxy.md) for migration instructions.
 >
 > **Onbid (공매) support** will be removed. Onbid's API has required repeated patches that are no longer sustainable to maintain as a personal project. All `get_public_auction_*` and `get_onbid_*` tools will be deleted.

@@ -8,8 +8,6 @@
 > [!WARNING]
 > **지원 종료 안내 — 2026년 6월 1일부**
 >
-> **ChatGPT 지원**이 제거됩니다. 필요한 OAuth 흐름(Auth0 + PKCE + DCR)이 복잡하여 개인 프로젝트로 유지하기 어려우며, 향후 재구현 여부는 미정입니다.
->
 > **Caddy 리버스 프록시** 지원이 제거됩니다. Cloudflare Tunnel을 대안으로 권장하며, `docker/docker-compose.yml`에 `--profile cloudflare`로 이미 준비되어 있습니다. 마이그레이션 방법은 [docs/setup-reverse-proxy.md](docs/setup-reverse-proxy.md)를 참고하세요.
 >
 > **온비드(공매) 지원**이 제거됩니다. 온비드 API 오류 패치 작업이 반복적으로 발생해 개인 프로젝트로 유지하기 어려웠습니다. `get_public_auction_*` 및 `get_onbid_*` 관련 도구가 전부 삭제됩니다.

@@ -92,13 +92,8 @@ All URL constants (`_ONBID_*`, `_ODCLOUD_*`, etc.) are defined in `_helpers.py`.
 - `docker/docker-compose.yml` — runs the MCP server behind a Caddy reverse proxy (TLS termination); the `mcp` service is not port-exposed directly
 - The server entry point is the `real-estate-mcp` CLI script registered in `pyproject.toml`
 
-**OAuth / Auth server** ([src/real_estate/auth_server.py](src/real_estate/auth_server.py)):
-- Separate FastAPI app (not part of MCP server) serving OAuth 2.0 endpoints for remote HTTP clients
-- Supports two token paths: `client_credentials` (hex token, in-memory TTL) and Auth0 PKCE flow (JWT verified via `/userinfo`)
-- Required env vars for Docker HTTP mode: `PUBLIC_BASE_URL`, `AUTH0_DOMAIN`, `AUTH0_AUDIENCE`, `OAUTH_CLIENT_ID`, `OAUTH_CLIENT_SECRET`, `OAUTH_TOKEN_TTL`
-
 ## Testing Conventions
 
 Tests use `respx` to mock `httpx` calls — the real API is never called in unit tests. Each tool has its own test file under `tests/mcp_server/`. Coverage threshold is 80% (enforced by pytest-cov). `asyncio_mode = "auto"` is set so async tests require no extra decorator.
 
-Test classes follow the pattern: unit tests for parsers and helpers (no mock needed) + integration tests using `@respx.mock` + `monkeypatch.setenv("DATA_GO_KR_API_KEY", "test-key")` fixture. Auth server tests are under `tests/auth/`.
+Test classes follow the pattern: unit tests for parsers and helpers (no mock needed) + integration tests using `@respx.mock` + `monkeypatch.setenv("DATA_GO_KR_API_KEY", "test-key")` fixture.

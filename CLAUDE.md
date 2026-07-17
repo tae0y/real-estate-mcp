@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-MCP server exposing Korea's MOLIT (국토교통부) real estate transaction API to Claude Desktop. The server wraps XML endpoints from `apis.data.go.kr`, `api.odcloud.kr`, and `openapi.onbid.co.kr`, providing 14+ tools for querying apartment, officetel, villa, single-house, commercial trade/rent data, APT subscription info, and public auction (공매) bid results.
+MCP server exposing Korea's MOLIT (국토교통부) real estate transaction API to Claude Desktop. The server wraps XML endpoints from `apis.data.go.kr` and `api.odcloud.kr`, providing tools for querying apartment, officetel, villa, single-house, commercial trade/rent data, and APT subscription info.
 
 Requires `DATA_GO_KR_API_KEY` from [공공데이터포털](https://www.data.go.kr) in a `.env` file at the project root.
 
@@ -41,8 +41,8 @@ MCP tools are spread across modules under [src/real_estate/mcp_server/](src/real
 - [\_\_init\_\_.py](src/real_estate/mcp_server/__init__.py) — creates the shared `mcp = FastMCP("real-estate")` instance and loads `.env`
 - [\_helpers.py](src/real_estate/mcp_server/_helpers.py) — all URL constants, shared runners, HTTP fetch, XML parse, and summary helpers
 - [\_region.py](src/real_estate/mcp_server/_region.py) — region code search logic
-- [tools/](src/real_estate/mcp_server/tools/) — one file per domain: `trade.py`, `rent.py`, `subscription.py`, `onbid.py`, `finance.py` (`calculate_loan_payment`, `calculate_compound_growth`, `calculate_monthly_cashflow`)
-- [parsers/](src/real_estate/mcp_server/parsers/) — XML parsers: `trade.py`, `rent.py`, `onbid.py`
+- [tools/](src/real_estate/mcp_server/tools/) — one file per domain: `trade.py`, `rent.py`, `subscription.py`, `finance.py` (`calculate_loan_payment`, `calculate_compound_growth`, `calculate_monthly_cashflow`)
+- [parsers/](src/real_estate/mcp_server/parsers/) — XML parsers: `trade.py`, `rent.py`
 
 **Request flow for any trade/rent tool:**
 1. `_check_api_key()` — guard: fails fast if env var is missing
@@ -63,11 +63,8 @@ MCP tools are spread across modules under [src/real_estate/mcp_server/](src/real
 
 **Additional tool groups (beyond trade/rent):**
 - `get_apt_subscription_info` / `get_apt_subscription_results` — APT 청약 from `api.odcloud.kr`
-- `get_public_auction_items` — onbid 공매 bid results from `apis.data.go.kr/B010003`
-- `get_onbid_thing_info_list` — onbid item list from `openapi.onbid.co.kr`
-- `get_onbid_*_code_info` / `get_onbid_addr*_info` — onbid code/address lookup from `openapi.onbid.co.kr`
 
-All URL constants (`_ONBID_*`, `_ODCLOUD_*`, etc.) are defined in `_helpers.py`.
+All URL constants (`_ODCLOUD_*`, etc.) are defined in `_helpers.py`.
 
 **Key design constraints:**
 - Prices are in 만원 (10,000 KRW) units, field suffix `_10k`
@@ -77,7 +74,6 @@ All URL constants (`_ONBID_*`, `_ODCLOUD_*`, etc.) are defined in `_helpers.py`.
 
 **API key env vars** (all fall back to `DATA_GO_KR_API_KEY` if not set):
 - `ODCLOUD_API_KEY` / `ODCLOUD_SERVICE_KEY` — Applyhome (청약홈) Authorization header and query param
-- `ONBID_API_KEY` — Onbid (openapi.onbid.co.kr)
 
 **Utility modules** ([src/real_estate/common_utils/](src/real_estate/common_utils/)) — standalone CLI tools, not part of MCP:
 - `docx_parser.py` / `hwp_parser.py` — extract text from .docx/.hwp files

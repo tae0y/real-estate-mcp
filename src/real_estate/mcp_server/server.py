@@ -18,7 +18,6 @@ Tools:
   - get_apt_subscription_info: applyhome (청약홈) APT subscription notice metadata
   - get_apt_subscription_results: applyhome (청약홈) subscription stats
     (requests, winners, rates, scores)
-  - get_public_auction_items: onbid next-gen bid result list (공매 물건 입찰결과 목록)
 
 Korean housing-type keyword mapping (for tool selection):
   - "아파트" → get_apartment_trades / get_apartment_rent
@@ -35,14 +34,6 @@ Korean "subscription" keyword mapping (for tool selection):
     → get_apt_subscription_info
   - "청약 경쟁률", "청약 신청자", "청약 당첨자", "가점", "가점제"
     → get_apt_subscription_results
-
-Korean "onbid/public auction" keyword mapping (for tool selection):
-  - "온비드", "공매", "입찰", "낙찰", "유찰", "캠코"
-    → get_public_auction_items (next-gen bid results list, B010003)
-  - "온비드 물건", "온비드 물건조회", "통합용도별물건", "처분방식", "감정가", "최저입찰가"
-    → get_onbid_thing_info_list (ThingInfoInquireSvc list)
-  - "온비드 코드", "용도 코드", "카테고리 코드", "주소 코드", "시도/시군구/읍면동 코드조회"
-    → get_onbid_*_code_info / get_onbid_addr*_info (OnbidCodeInfoInquireSvc)
 """
 
 from __future__ import annotations
@@ -50,7 +41,6 @@ from __future__ import annotations
 from typing import Any
 
 import real_estate.mcp_server.tools.finance  # noqa: F401 — registers @mcp.tool()
-import real_estate.mcp_server.tools.onbid  # noqa: F401
 import real_estate.mcp_server.tools.rent  # noqa: F401
 import real_estate.mcp_server.tools.subscription  # noqa: F401
 import real_estate.mcp_server.tools.trade  # noqa: F401

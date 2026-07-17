@@ -11,8 +11,6 @@ Provides 14+ tools for live transaction data and financial calculations — apar
 > **ChatGPT support** will be removed. The required OAuth flow (Auth0 + PKCE + DCR) is too complex to maintain as a personal project and will be re-evaluated for a future release.
 >
 > **Caddy reverse proxy** support will be removed. Cloudflare Tunnel is the recommended replacement and is already available in `docker/docker-compose.yml` via `--profile cloudflare`. See [docs/setup-reverse-proxy.md](docs/setup-reverse-proxy.md) for migration instructions.
->
-> **Onbid (공매) support** will be removed. Onbid's API has required repeated patches that are no longer sustainable to maintain as a personal project. All `get_public_auction_*` and `get_onbid_*` tools will be deleted.
 
 ## Supported Tools
 
@@ -22,9 +20,6 @@ Provides 14+ tools for live transaction data and financial calculations — apar
 - [x] Single-house / multi-household trade / rent (`get_single_house_trades`, `get_single_house_rent`)
 - [x] Commercial building trades (`get_commercial_trade`)
 - [x] Apartment subscription notices / results (`get_apt_subscription_info`, `get_apt_subscription_results`)
-- [ ] ~~Onbid public auction bid results (`get_public_auction_items`, `get_public_auction_item_detail`)~~ / 🗑️ Removed June 1, 2026
-- [ ] ~~Onbid item lookup (`get_onbid_thing_info_list`)~~ / 🗑️ Removed June 1, 2026
-- [ ] ~~Onbid code / address lookup (`get_onbid_*_code_info`, `get_onbid_addr*_info`)~~ / 🗑️ Removed June 1, 2026
 - [x] Region code lookup (`get_region_code`)
 
 ## Prerequisites
@@ -40,10 +35,6 @@ Provides 14+ tools for live transaction data and financial calculations — apar
   - [국토교통부\_단독/다가구 매매 실거래가 자료](https://www.data.go.kr/data/15126465/openapi.do)
   - [국토교통부\_단독/다가구 전월세 자료](https://www.data.go.kr/data/15126472/openapi.do)
   - [국토교통부\_상업업무용 부동산 매매 신고 자료](https://www.data.go.kr/data/15126463/openapi.do)
-  - [한국자산관리공사\_온비드 코드 조회서비스](https://www.data.go.kr/data/15000920/openapi.do)
-  - [한국자산관리공사\_온비드 물건 정보 조회서비스](https://www.data.go.kr/data/15000837/openapi.do)
-  - [한국자산관리공사\_차세대 온비드 물건 입찰결과목록 조회서비스](https://www.data.go.kr/data/15157252/openapi.do)
-  - [한국자산관리공사\_차세대 온비드 물건 입찰결과상세 조회서비스](https://www.data.go.kr/data/15157254/openapi.do)
   - [한국부동산원_청약홈_APT 분양정보](https://www.data.go.kr/data/15101046/fileData.do)
   - [한국부동산원_청약홈 청약 신청·당첨자 정보 조회 서비스](https://www.data.go.kr/data/15110812/openapi.do)
 

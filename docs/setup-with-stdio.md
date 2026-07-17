@@ -58,8 +58,7 @@ The client launches the server as a child process. No separate server process is
     "env": {
       "DATA_GO_KR_API_KEY": "...",
       "ODCLOUD_API_KEY": "...",
-      "ODCLOUD_SERVICE_KEY": "...",
-      "ONBID_API_KEY": "..."
+      "ODCLOUD_SERVICE_KEY": "..."
     }
     ```
 
@@ -101,7 +100,6 @@ open "$HOME/Library/Application Support/Claude/claude_desktop_config.json"
       -e DATA_GO_KR_API_KEY=... \
       -e ODCLOUD_API_KEY=... \
       -e ODCLOUD_SERVICE_KEY=... \
-      -e ONBID_API_KEY=... \
       real-estate -- \
       uv run --directory /path/to/real-estate-mcp \
       python src/real_estate/mcp_server/server.py
@@ -146,7 +144,6 @@ claude mcp remove real-estate
       --env DATA_GO_KR_API_KEY=... \
       --env ODCLOUD_API_KEY=... \
       --env ODCLOUD_SERVICE_KEY=... \
-      --env ONBID_API_KEY=... \
       -- uv run --directory /path/to/real-estate-mcp \
       python src/real_estate/mcp_server/server.py
     ```

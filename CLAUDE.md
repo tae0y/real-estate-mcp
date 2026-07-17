@@ -85,7 +85,7 @@ All URL constants (`_ODCLOUD_*`, etc.) are defined in `_helpers.py`.
 
 **HTTP mode and Docker deployment:**
 - `real-estate-mcp --transport http [--host 127.0.0.1] [--port 8000]` — starts streamable-HTTP server for remote clients
-- `docker/docker-compose.yml` — runs the MCP server behind a Caddy reverse proxy (TLS termination); the `mcp` service is not port-exposed directly
+- `docker/docker-compose.yml` — runs the MCP server behind a Cloudflare Tunnel (`--profile cloudflare`) for TLS termination and remote exposure; the `mcp` service is not port-exposed directly
 - The server entry point is the `real-estate-mcp` CLI script registered in `pyproject.toml`
 
 ## Testing Conventions

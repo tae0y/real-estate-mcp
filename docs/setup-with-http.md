@@ -72,4 +72,3 @@ codex mcp remove real-estate
 
 > **Deprecated:** ChatGPT support will be removed on June 1, 2026.
 > The required OAuth flow (Auth0 + PKCE + DCR) is too complex to maintain reliably — it will be re-evaluated for a future release.
-> For the Caddy + Auth0 setup, see the deprecated Option B in [setup-reverse-proxy.md](setup-reverse-proxy.md).

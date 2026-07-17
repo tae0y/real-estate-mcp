@@ -9,7 +9,6 @@ authors = [
 requires-python = ">=3.12"
 dependencies = [
     # Web Framework
-    "fastapi>=0.128.0",
     "uvicorn>=0.40.0",
     # UI
     "streamlit>=1.40.0",
@@ -23,8 +22,6 @@ dependencies = [
     "defusedxml>=0.7.1",
     "olefile>=0.47",
     "pillow>=12.1.1",
-    "python-multipart>=0.0.22",
-    "python-jose[cryptography]>=3.5.0",
 ]
 
 [project.scripts]

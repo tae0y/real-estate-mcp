@@ -5,11 +5,6 @@
 Connect Claude to Korea's MOLIT real estate API and simulate **buy now / buy later / invest only** scenarios based on your income, savings, and retirement goals.
 Provides 14+ tools for live transaction data and financial calculations — apartment, officetel, villa, single-house, and commercial.
 
-> [!WARNING]
-> **Deprecation Notice — effective June 1, 2026**
->
-> **ChatGPT support** will be removed. The required OAuth flow (Auth0 + PKCE + DCR) is too complex to maintain as a personal project and will be re-evaluated for a future release.
-
 ## Supported Tools
 
 - [x] Apartment trade / rent (`get_apartment_trades`, `get_apartment_rent`)

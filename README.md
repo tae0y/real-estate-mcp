@@ -9,8 +9,6 @@ Provides 14+ tools for live transaction data and financial calculations — apar
 > **Deprecation Notice — effective June 1, 2026**
 >
 > **ChatGPT support** will be removed. The required OAuth flow (Auth0 + PKCE + DCR) is too complex to maintain as a personal project and will be re-evaluated for a future release.
->
-> **Caddy reverse proxy** support will be removed. Cloudflare Tunnel is the recommended replacement and is already available in `docker/docker-compose.yml` via `--profile cloudflare`. See [docs/setup-reverse-proxy.md](docs/setup-reverse-proxy.md) for migration instructions.
 
 ## Supported Tools
 
@@ -97,7 +95,7 @@ For other clients, transport options, or per-service API key configuration, see 
 | [docs/setup-prerequisites.md](docs/setup-prerequisites.md) | — | All clients |
 | [docs/setup-with-stdio.md](docs/setup-with-stdio.md) | stdio / local HTTP | Claude Desktop, Claude CLI, Codex CLI |
 | [docs/setup-with-http.md](docs/setup-with-http.md) | HTTP (remote) | Claude (web), Claude CLI, Codex CLI |
-| [docs/setup-reverse-proxy.md](docs/setup-reverse-proxy.md) | — | Server-side proxy setup (Cloudflare Tunnel / Caddy) |
+| [docs/setup-reverse-proxy.md](docs/setup-reverse-proxy.md) | — | Server-side proxy setup (Cloudflare Tunnel) |
 
 ## Contributors
 

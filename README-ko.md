@@ -9,8 +9,6 @@
 > **지원 종료 안내 — 2026년 6월 1일부**
 >
 > **ChatGPT 지원**이 제거됩니다. 필요한 OAuth 흐름(Auth0 + PKCE + DCR)이 복잡하여 개인 프로젝트로 유지하기 어려우며, 향후 재구현 여부는 미정입니다.
->
-> **Caddy 리버스 프록시** 지원이 제거됩니다. Cloudflare Tunnel을 대안으로 권장하며, `docker/docker-compose.yml`에 `--profile cloudflare`로 이미 준비되어 있습니다. 마이그레이션 방법은 [docs/setup-reverse-proxy.md](docs/setup-reverse-proxy.md)를 참고하세요.
 
 ## Supported Tools
 
@@ -96,7 +94,7 @@
 | [docs/setup-prerequisites.md](docs/setup-prerequisites.md) | — | 전체 공통 |
 | [docs/setup-with-stdio.md](docs/setup-with-stdio.md) | stdio / 로컬 HTTP | Claude Desktop, Claude CLI, Codex CLI |
 | [docs/setup-with-http.md](docs/setup-with-http.md) | HTTP (원격) | Claude (웹), Claude CLI, Codex CLI |
-| [docs/setup-reverse-proxy.md](docs/setup-reverse-proxy.md) | — | 서버 사이드 프록시 설정 (Cloudflare Tunnel / Caddy) |
+| [docs/setup-reverse-proxy.md](docs/setup-reverse-proxy.md) | — | 서버 사이드 프록시 설정 (Cloudflare Tunnel) |
 
 ## Contributors
 

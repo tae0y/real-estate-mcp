@@ -145,3 +145,14 @@ class TestGetCommercialTrade:
         result = await get_commercial_trade("11440", "202501")
 
         assert result["error"] == "config_error"
+
+    @respx.mock
+    async def test_timeout_returns_network_error(self) -> None:
+        """A timeout returns a network_error."""
+        import httpx as _httpx
+
+        respx.get(_API_URL).mock(side_effect=_httpx.TimeoutException("timeout"))
+
+        result = await get_commercial_trade("11440", "202501")
+
+        assert result["error"] == "network_error"

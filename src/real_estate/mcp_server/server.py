@@ -18,6 +18,9 @@ Tools:
   - get_apt_subscription_info: applyhome (청약홈) APT subscription notice metadata
   - get_apt_subscription_results: applyhome (청약홈) subscription stats
     (requests, winners, rates, scores)
+  - calculate_loan_payment: monthly/total loan payment and interest
+  - calculate_compound_growth: compound growth projection with monthly contributions
+  - calculate_monthly_cashflow: monthly cashflow after loan payment and living costs
 
 Korean housing-type keyword mapping (for tool selection):
   - "아파트" → get_apartment_trades / get_apartment_rent

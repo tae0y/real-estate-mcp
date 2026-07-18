@@ -58,6 +58,16 @@ class TestGetAptSubscriptionInfo:
         assert result["error"] == "validation_error"
 
     @respx.mock
+    async def test_timeout_returns_network_error(self) -> None:
+        import httpx as _httpx
+
+        respx.get(_INFO_URL).mock(side_effect=_httpx.TimeoutException("timeout"))
+
+        result = await get_apt_subscription_info()
+
+        assert result["error"] == "network_error"
+
+    @respx.mock
     async def test_service_key_mode_works(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.delenv("ODCLOUD_API_KEY", raising=False)
         monkeypatch.setenv("ODCLOUD_SERVICE_KEY", "test-service-key")
@@ -139,6 +149,86 @@ class TestGetAptSubscriptionResults:
         result = await get_apt_subscription_results(stat_kind="nope")
         assert result["error"] == "validation_error"
 
+    @respx.mock
+    async def test_success_reqst_age(self) -> None:
+        payload = {
+            "currentCount": 1,
+            "data": [{"STAT_DE": "202501", "AGE_30": 5}],
+            "matchCount": 1,
+            "page": 1,
+            "perPage": 10,
+            "totalCount": 1,
+        }
+        respx.get(f"{_STAT_BASE_URL}/getAPTReqstAgeStat").mock(
+            return_value=Response(200, json=payload)
+        )
+
+        result = await get_apt_subscription_results(stat_kind="reqst_age")
+
+        assert "error" not in result
+        assert result["stat_kind"] == "reqst_age"
+        assert result["total_count"] == 1
+
+    @respx.mock
+    async def test_success_przwner_area(self) -> None:
+        payload = {
+            "currentCount": 1,
+            "data": [{"STAT_DE": "202501", "SUBSCRPT_AREA_CODE": "01"}],
+            "matchCount": 1,
+            "page": 1,
+            "perPage": 10,
+            "totalCount": 1,
+        }
+        respx.get(f"{_STAT_BASE_URL}/getAPTPrzwnerAreaStat").mock(
+            return_value=Response(200, json=payload)
+        )
+
+        result = await get_apt_subscription_results(stat_kind="przwner_area")
+
+        assert "error" not in result
+        assert result["stat_kind"] == "przwner_area"
+        assert result["total_count"] == 1
+
+    @respx.mock
+    async def test_success_przwner_age(self) -> None:
+        payload = {
+            "currentCount": 1,
+            "data": [{"STAT_DE": "202501", "AGE_30": 3}],
+            "matchCount": 1,
+            "page": 1,
+            "perPage": 10,
+            "totalCount": 1,
+        }
+        respx.get(f"{_STAT_BASE_URL}/getAPTPrzwnerAgeStat").mock(
+            return_value=Response(200, json=payload)
+        )
+
+        result = await get_apt_subscription_results(stat_kind="przwner_age")
+
+        assert "error" not in result
+        assert result["stat_kind"] == "przwner_age"
+        assert result["total_count"] == 1
+
+    @respx.mock
+    async def test_success_cmpetrt_area(self) -> None:
+        payload = {
+            "currentCount": 1,
+            "data": [{"STAT_DE": "202501", "SUBSCRPT_AREA_CODE": "01", "CMPET_RATE": "3.5"}],
+            "matchCount": 1,
+            "page": 1,
+            "perPage": 10,
+            "totalCount": 1,
+        }
+        respx.get(f"{_STAT_BASE_URL}/getAPTCmpetrtAreaStat").mock(
+            return_value=Response(200, json=payload)
+        )
+
+        result = await get_apt_subscription_results(stat_kind="cmpetrt_area")
+
+        assert "error" not in result
+        assert result["stat_kind"] == "cmpetrt_area"
+        assert result["total_count"] == 1
+
     async def test_invalid_page_returns_validation_error(self) -> None:
         result = await get_apt_subscription_results(stat_kind="reqst_area", page=0)
         assert result["error"] == "validation_error"
@@ -202,3 +292,15 @@ class TestGetAptSubscriptionResults:
 
         assert "error" not in result
         assert result["total_count"] == 1
+
+    @respx.mock
+    async def test_timeout_returns_network_error(self) -> None:
+        import httpx as _httpx
+
+        respx.get(f"{_STAT_BASE_URL}/getAPTReqstAreaStat").mock(
+            side_effect=_httpx.TimeoutException("timeout")
+        )
+
+        result = await get_apt_subscription_results(stat_kind="reqst_area")
+
+        assert result["error"] == "network_error"

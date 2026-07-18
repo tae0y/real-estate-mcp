@@ -339,3 +339,104 @@ class TestVillaSingleHouseTools:
         result = await get_villa_trades("11440", "202501")
 
         assert result["error"] == "config_error"
+
+    @respx.mock
+    async def test_single_house_trades_no_data_error(self) -> None:
+        """No-data response returns api_error for single house trades."""
+        respx.get(_SINGLE_TRADE_URL).mock(return_value=Response(200, text=_XML_NO_DATA))
+
+        result = await get_single_house_trades("11440", "200001")
+
+        assert result["error"] == "api_error"
+
+    async def test_single_house_trades_missing_key_config_error(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Missing API key returns config_error for single house trades."""
+        monkeypatch.delenv("DATA_GO_KR_API_KEY", raising=False)
+
+        result = await get_single_house_trades("11440", "202501")
+
+        assert result["error"] == "config_error"
+
+    @respx.mock
+    async def test_villa_rent_no_data_error(self) -> None:
+        """No-data response returns api_error for villa rent."""
+        respx.get(_VILLA_RENT_URL).mock(return_value=Response(200, text=_XML_NO_DATA))
+
+        result = await get_villa_rent("11440", "200001")
+
+        assert result["error"] == "api_error"
+
+    async def test_villa_rent_missing_key_config_error(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Missing API key returns config_error for villa rent."""
+        monkeypatch.delenv("DATA_GO_KR_API_KEY", raising=False)
+
+        result = await get_villa_rent("11440", "202501")
+
+        assert result["error"] == "config_error"
+
+    @respx.mock
+    async def test_single_house_rent_no_data_error(self) -> None:
+        """No-data response returns api_error for single house rent."""
+        respx.get(_SINGLE_RENT_URL).mock(return_value=Response(200, text=_XML_NO_DATA))
+
+        result = await get_single_house_rent("11440", "200001")
+
+        assert result["error"] == "api_error"
+
+    async def test_single_house_rent_missing_key_config_error(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Missing API key returns config_error for single house rent."""
+        monkeypatch.delenv("DATA_GO_KR_API_KEY", raising=False)
+
+        result = await get_single_house_rent("11440", "202501")
+
+        assert result["error"] == "config_error"
+
+    @respx.mock
+    async def test_villa_trades_timeout_returns_network_error(self) -> None:
+        """A timeout returns a network_error for villa trades."""
+        import httpx as _httpx
+
+        respx.get(_VILLA_URL).mock(side_effect=_httpx.TimeoutException("timeout"))
+
+        result = await get_villa_trades("11440", "202501")
+
+        assert result["error"] == "network_error"
+
+    @respx.mock
+    async def test_villa_rent_timeout_returns_network_error(self) -> None:
+        """A timeout returns a network_error for villa rent."""
+        import httpx as _httpx
+
+        respx.get(_VILLA_RENT_URL).mock(side_effect=_httpx.TimeoutException("timeout"))
+
+        result = await get_villa_rent("11440", "202501")
+
+        assert result["error"] == "network_error"
+
+    @respx.mock
+    async def test_single_house_trades_timeout_returns_network_error(self) -> None:
+        """A timeout returns a network_error for single house trades."""
+        import httpx as _httpx
+
+        respx.get(_SINGLE_TRADE_URL).mock(side_effect=_httpx.TimeoutException("timeout"))
+
+        result = await get_single_house_trades("11440", "202501")
+
+        assert result["error"] == "network_error"
+
+    @respx.mock
+    async def test_single_house_rent_timeout_returns_network_error(self) -> None:
+        """A timeout returns a network_error for single house rent."""
+        import httpx as _httpx
+
+        respx.get(_SINGLE_RENT_URL).mock(side_effect=_httpx.TimeoutException("timeout"))
+
+        result = await get_single_house_rent("11440", "202501")
+
+        assert result["error"] == "network_error"

@@ -176,3 +176,42 @@ class TestGetOfficetelTools:
         result = await get_officetel_trades("11440", "202501")
 
         assert result["error"] == "config_error"
+
+    @respx.mock
+    async def test_rent_no_data_error(self) -> None:
+        """No-data response returns api_error for rent tool."""
+        respx.get(_RENT_URL).mock(return_value=Response(200, text=_XML_NO_DATA))
+
+        result = await get_officetel_rent("11440", "200001")
+
+        assert result["error"] == "api_error"
+
+    async def test_rent_missing_key_config_error(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Missing API key returns config_error for rent tool."""
+        monkeypatch.delenv("DATA_GO_KR_API_KEY", raising=False)
+
+        result = await get_officetel_rent("11440", "202501")
+
+        assert result["error"] == "config_error"
+
+    @respx.mock
+    async def test_trade_timeout_returns_network_error(self) -> None:
+        """A timeout returns a network_error for trade tool."""
+        import httpx as _httpx
+
+        respx.get(_TRADE_URL).mock(side_effect=_httpx.TimeoutException("timeout"))
+
+        result = await get_officetel_trades("11440", "202501")
+
+        assert result["error"] == "network_error"
+
+    @respx.mock
+    async def test_rent_timeout_returns_network_error(self) -> None:
+        """A timeout returns a network_error for rent tool."""
+        import httpx as _httpx
+
+        respx.get(_RENT_URL).mock(side_effect=_httpx.TimeoutException("timeout"))
+
+        result = await get_officetel_rent("11440", "202501")
+
+        assert result["error"] == "network_error"

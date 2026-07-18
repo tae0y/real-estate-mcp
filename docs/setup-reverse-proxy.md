@@ -60,14 +60,10 @@ No port forwarding or TLS certificate management required.
 1. Start the containers.
 
     ```bash
-    # bash/zsh
-    docker compose -f docker/docker-compose.yml --profile cloudflare up -d --build
+    docker compose --env-file .env -f docker/docker-compose.yml --profile cloudflare up -d --build
     ```
 
-    ```powershell
-    # PowerShell
-    docker compose -f docker/docker-compose.yml --profile cloudflare up -d --build
-    ```
+    > **Important:** `--env-file .env` is required because Compose v2 otherwise treats the compose file's directory (`docker/`) as the project directory and looks for `docker/.env` instead of the root `.env`, leaving `CLOUDFLARE_TUNNEL_TOKEN` blank. `--env-file` is a global flag and must come before `up`.
 
     The `cloudflared` service depends on the `mcp` health check passing, so it starts roughly 15–45 seconds after Docker Compose begins. Once both containers are running, the tunnel status in the Cloudflare dashboard changes to **Healthy**.
 
@@ -81,13 +77,7 @@ No port forwarding or TLS certificate management required.
 1. Stop and remove the containers.
 
     ```bash
-    # bash/zsh
-    docker compose -f docker/docker-compose.yml --profile cloudflare down
-    ```
-
-    ```powershell
-    # PowerShell
-    docker compose -f docker/docker-compose.yml --profile cloudflare down
+    docker compose --env-file .env -f docker/docker-compose.yml --profile cloudflare down
     ```
 
 1. In the Cloudflare Zero Trust dashboard → **Networks** → **Tunnels**, select the tunnel → **Delete**.

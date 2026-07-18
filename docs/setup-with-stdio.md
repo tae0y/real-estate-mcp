@@ -8,7 +8,6 @@ This page describes how to connect the real estate MCP server to a local client 
 - [x] Claude CLI — stdio and local HTTP
 - [x] Codex CLI — stdio and local HTTP
 - [ ] Claude (Web / Claude.ai) — requires a public URL; see [setup-with-http.md](setup-with-http.md)
-- [ ] ChatGPT (Web) — requires a public URL; see [setup-with-http.md](setup-with-http.md)
 
 ## Prerequisites
 

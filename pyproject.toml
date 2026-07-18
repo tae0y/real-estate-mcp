@@ -10,8 +10,6 @@ requires-python = ">=3.12"
 dependencies = [
     # Web Framework
     "uvicorn>=0.40.0",
-    # UI
-    "streamlit>=1.40.0",
     # HTTP Client (async)
     "httpx>=0.28.0",
     # Data Models & Settings

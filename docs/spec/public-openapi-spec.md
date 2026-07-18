@@ -149,6 +149,13 @@ Practical implication: an expired/bad key on this server surfaces to the MCP cal
 
 ## Applyhome / odcloud APIs (`api.odcloud.kr`)
 
+> **⚠️ Verification status:** unlike the MOLIT section above (whose error behavior was confirmed with live calls in 2026-07), the request/response shapes in this section are derived from the source code (`tools/subscription.py`) and the published odcloud dataset schemas — they have **not** been independently exercised against the live odcloud endpoints. In particular the *error* behavior is inferred, not observed:
+>
+> - Bad/expired/missing key, rate limiting, and malformed filters: the exact upstream HTTP status codes and response bodies are **unconfirmed**. Based on the code path, an HTTP-level failure surfaces to the caller as `network_error` (via `_fetch_json`'s `raise_for_status()`) and a non-JSON or non-dict body as `parse_error`; whether odcloud actually returns 401/403/429 or an in-body error envelope for these cases was not tested.
+> - Empty-result behavior (does odcloud return `totalCount: 0` with an empty `data`, or something else?) was not verified.
+>
+> Treat the success-path field mappings below as reliable and the error/edge-case notes as best-effort until a live pass is done.
+
 ### Authentication
 
 Resolved once per call via `_get_odcloud_key()`, in this priority order:

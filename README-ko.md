@@ -80,6 +80,8 @@
 
 1. 더 정확한 응답을 위해 Claude Desktop에서 **Project**를 생성하고, [resources/custom-instructions-ko.md](resources/custom-instructions-ko.md) 내용을 **Project Instructions** 탭에 붙여넣으세요.
 
+   한국 주택청약 가점과 스트레스 DSR 예시는 [resources/korea-housing-reference-examples.md](resources/korea-housing-reference-examples.md)에서 확인할 수 있습니다.
+
 ## Connect with Other Clients
 
 다른 클라이언트, 전송 방식, 서비스별 API 키 설정은 아래 문서를 참고하세요.

@@ -81,6 +81,8 @@ The fastest way to get started — the server runs as a child process of Claude 
 
 1. For better responses, create a **Project** in Claude Desktop and paste [resources/custom-instructions-ko.md](resources/custom-instructions-ko.md) into the **Project Instructions** tab.
 
+   Optional Korean housing reference examples are available in [resources/korea-housing-reference-examples.md](resources/korea-housing-reference-examples.md).
+
 ## Connect with Other Clients
 
 For other clients, transport options, or per-service API key configuration, see the docs below.
